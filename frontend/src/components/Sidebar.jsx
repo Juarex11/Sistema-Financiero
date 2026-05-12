@@ -1,4 +1,5 @@
 import { useState } from "react";
+import logo from "../assets/logo.png";
 
 const HomeIcon    = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>;
 const IncomeIcon  = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
@@ -11,10 +12,7 @@ const SettingsIcon= () => <svg className="w-5 h-5" fill="none" stroke="currentCo
 const BadgeIcon   = () => <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>;
 
 const navItems = [
-  {
-    section: "PRINCIPAL",
-    items: [{ label: "Dashboard", Icon: HomeIcon }],
-  },
+  { section: "PRINCIPAL", items: [{ label: "Dashboard", Icon: HomeIcon }] },
   {
     section: "FINANZAS",
     items: [
@@ -27,105 +25,131 @@ const navItems = [
   {
     section: "CONFIGURACIÓN",
     items: [
-      { label: "Usuarios",  Icon: UsersIcon,  adminOnly: true },
+      { label: "Usuarios",  Icon: UsersIcon,   adminOnly: true },
       { label: "Mi Perfil", Icon: ProfileIcon },
       { label: "Ajustes",   Icon: SettingsIcon },
     ],
   },
 ];
 
-export default function Sidebar({ collapsed, role }) {
+export default function Sidebar({ collapsed, mobileOpen, onMobileClose, role }) {
   const [active, setActive] = useState("Dashboard");
   const [tooltip, setTooltip] = useState(null);
 
-  return (
-    <aside
-      className={`
-        h-full bg-white border-r border-gray-100 flex flex-col shrink-0
-        transition-all duration-300 ease-in-out
-        ${collapsed ? "w-16" : "w-64"}
-      `}
-    >
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-5 mt-1">
-        {navItems.map((group) => {
-          const visibleItems = group.items.filter(
-            (item) => !item.adminOnly || role === "admin"
-          );
-          if (!visibleItems.length) return null;
+  const NavContent = ({ forceExpanded = false }) => (
+    <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-5 mt-1">
+      {navItems.map((group) => {
+        const visibleItems = group.items.filter(
+          (item) => !item.adminOnly || role === "admin"
+        );
+        if (!visibleItems.length) return null;
 
-          return (
-            <div key={group.section}>
-              {!collapsed && (
-                <p className="text-[10px] font-bold text-purple-500 tracking-widest mb-2 px-3">
-                  {group.section}
-                </p>
-              )}
-              {collapsed && (
-                <div className="border-t border-purple-100 mb-2 mx-2" />
-              )}
+        const isCollapsed = !forceExpanded && collapsed;
 
-              <ul className="space-y-1">
-                {visibleItems.map(({ label, Icon }) => (
-                  <li key={label} className="relative px-1">
-                    <button
-                      onClick={() => setActive(label)}
-                      onMouseEnter={() => collapsed && setTooltip(label)}
-                      onMouseLeave={() => setTooltip(null)}
-                      className={`
-                        w-full flex items-center gap-3 rounded-lg text-sm font-medium
-                        transition-all duration-150
-                        ${collapsed ? "justify-center px-0 py-3" : "px-4 py-3"}
-                        ${active === label
-                          ? "bg-purple-100 text-purple-700"
-                          : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-                        }
-                      `}
-                    >
-                      <span className={`shrink-0 ${active === label ? "text-purple-600" : ""}`}>
-                        <Icon />
-                      </span>
-                      {!collapsed && <span>{label}</span>}
-                    </button>
+        return (
+          <div key={group.section}>
+            {!isCollapsed && (
+              <p className="text-[10px] font-bold text-purple-500 tracking-widest mb-2 px-3">
+                {group.section}
+              </p>
+            )}
+            {isCollapsed && <div className="border-t border-purple-100 mb-2 mx-2" />}
 
-                    {/* Tooltip when collapsed */}
-                    {collapsed && tooltip === label && (
-                      <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 pointer-events-none">
-                        <div className="bg-gray-800 text-white text-xs rounded-lg px-2.5 py-1.5 whitespace-nowrap shadow-lg">
-                          {label}
-                        </div>
+            <ul className="space-y-1">
+              {visibleItems.map(({ label, Icon }) => (
+                <li key={label} className="relative px-1">
+                  <button
+                    onClick={() => { setActive(label); onMobileClose?.(); }}
+                    onMouseEnter={() => isCollapsed && setTooltip(label)}
+                    onMouseLeave={() => setTooltip(null)}
+                    className={`
+                      w-full flex items-center gap-3 rounded-lg text-sm font-medium
+                      transition-all duration-150
+                      ${isCollapsed ? "justify-center px-0 py-3" : "px-4 py-3"}
+                      ${active === label
+                        ? "bg-purple-100 text-purple-700"
+                        : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                      }
+                    `}
+                  >
+                    <span className={`shrink-0 ${active === label ? "text-purple-600" : ""}`}>
+                      <Icon />
+                    </span>
+                    {!isCollapsed && <span>{label}</span>}
+                  </button>
+
+                  {isCollapsed && tooltip === label && (
+                    <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 pointer-events-none">
+                      <div className="bg-gray-800 text-white text-xs rounded-lg px-2.5 py-1.5 whitespace-nowrap shadow-lg">
+                        {label}
                       </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          );
-        })}
-      </nav>
-
-      {/* Footer */}
-      {!collapsed && (
-        <div className="px-3 py-4 border-t border-gray-100">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-purple-50">
-            <div className="w-6 h-6 rounded-lg bg-purple-600 flex items-center justify-center shrink-0">
-              <BadgeIcon />
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-purple-700">Plan Activo</p>
-              <p className="text-[10px] text-purple-400">Sistema v1.0</p>
-            </div>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
           </div>
-        </div>
-      )}
+        );
+      })}
+    </nav>
+  );
 
-      {collapsed && (
-        <div className="py-4 flex justify-center border-t border-gray-100">
-          <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center">
+  const Footer = ({ forceExpanded = false }) => {
+    const isCollapsed = !forceExpanded && collapsed;
+    return isCollapsed ? (
+      <div className="py-4 flex justify-center border-t border-gray-100">
+        <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center">
+          <BadgeIcon />
+        </div>
+      </div>
+    ) : (
+      <div className="px-3 py-4 border-t border-gray-100">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-purple-50">
+          <div className="w-6 h-6 rounded-lg bg-purple-600 flex items-center justify-center shrink-0">
             <BadgeIcon />
           </div>
+          <div>
+            <p className="text-xs font-semibold text-purple-700">Plan Activo</p>
+            <p className="text-[10px] text-purple-400">Sistema v1.0</p>
+          </div>
         </div>
+      </div>
+    );
+  };
+
+  return (
+    <>
+      {/* ── DESKTOP sidebar (colapsa a iconos) ── */}
+      <aside
+        className={`
+          hidden lg:flex flex-col h-full bg-white border-r border-gray-100 shrink-0
+          transition-all duration-300 ease-in-out
+          ${collapsed ? "w-16" : "w-64"}
+        `}
+      >
+        <NavContent />
+        <Footer />
+      </aside>
+
+      {/* ── MOBILE sidebar (overlay completo) ── */}
+      {mobileOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/40 z-40 lg:hidden"
+            onClick={onMobileClose}
+          />
+          {/* Drawer */}
+          <aside className="fixed top-0 left-0 h-full w-64 bg-white shadow-2xl z-50 flex flex-col lg:hidden">
+            {/* Logo en mobile */}
+            <div className="flex items-center px-5 py-4 border-b border-gray-100">
+              <img src={logo} alt="Milenco" className="h-10 w-auto object-contain" />
+            </div>
+            <NavContent forceExpanded />
+            <Footer forceExpanded />
+          </aside>
+        </>
       )}
-    </aside>
+    </>
   );
 }

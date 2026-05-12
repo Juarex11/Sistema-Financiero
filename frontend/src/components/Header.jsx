@@ -1,4 +1,7 @@
 import { useState } from "react";
+import logo from "../assets/logo.png";
+
+const HamburgerIcon = () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>;
 
 const SidebarToggleIcon = ({ collapsed }) => collapsed
   ? <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
@@ -10,32 +13,38 @@ const SettingsIcon = () => <svg className="w-4 h-4" fill="none" stroke="currentC
 const LogoutIcon   = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>;
 const BellIcon     = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>;
 
-export default function Header({ user, onLogout, sidebarCollapsed, onToggleSidebar }) {
+export default function Header({ user, onLogout, sidebarCollapsed, onToggleSidebar, onMobileMenuToggle }) {
   const [dropOpen, setDropOpen] = useState(false);
   const [notiOpen, setNotiOpen] = useState(false);
 
   return (
-    <header className="h-16 bg-white border-b border-gray-200 shadow-md flex items-center px-5 gap-4 sticky top-0 z-10 w-full">
+    <header className="h-20 bg-white border-b border-gray-200 shadow-md flex items-center px-5 gap-4 sticky top-0 z-10 w-full">
 
-      {/* Left: Logo + gap + toggle */}
+      {/* Left */}
       <div className="flex items-center shrink-0">
-        <img
-          src="https://placehold.co/36x36/7c3aed/ffffff?text=M"
-          alt="Milenco"
-          className="w-9 h-9 rounded-xl object-cover shadow-md shadow-purple-100"
-        />
-        {/* Extra gap between logo and toggle */}
-        <div className="w-6" />
+        {/* Logo solo en desktop */}
+        <img src={logo} alt="Milenco" className="hidden lg:block h-14 w-auto object-contain" />
+        <div className="hidden lg:block w-6" />
+
+        {/* Desktop: colapsar a iconos */}
         <button
           onClick={onToggleSidebar}
-          className="text-gray-500 hover:text-purple-600 transition"
+          className="hidden lg:block text-gray-500 hover:text-purple-600 transition"
           title={sidebarCollapsed ? "Expandir menú" : "Colapsar menú"}
         >
           <SidebarToggleIcon collapsed={sidebarCollapsed} />
         </button>
+
+        {/* Mobile: solo hamburguesa */}
+        <button
+          onClick={onMobileMenuToggle}
+          className="lg:hidden text-gray-500 hover:text-purple-600 transition"
+        >
+          <HamburgerIcon />
+        </button>
       </div>
 
-      {/* Right side */}
+      {/* Right */}
       <div className="ml-auto flex items-center gap-3">
 
         {/* Notifications */}
@@ -49,18 +58,18 @@ export default function Header({ user, onLogout, sidebarCollapsed, onToggleSideb
           </button>
 
           {notiOpen && (
-            <div className="absolute right-0 top-12 w-72 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden z-50">
+            <div className="absolute right-0 top-14 w-72 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden z-50">
               <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                 <p className="text-sm font-semibold text-gray-700">Notificaciones</p>
                 <span className="text-xs bg-purple-100 text-purple-600 font-semibold px-2 py-0.5 rounded-full">3 nuevas</span>
               </div>
               {[
-                { title: "Nuevo ingreso registrado", time: "Hace 5 min", color: "bg-green-100 text-green-600" },
-                { title: "Presupuesto al 71%", time: "Hace 1 hora", color: "bg-yellow-100 text-yellow-600" },
-                { title: "Reporte mensual listo", time: "Hace 3 horas", color: "bg-purple-100 text-purple-600" },
+                { title: "Nuevo ingreso registrado", time: "Hace 5 min", dot: "bg-green-500" },
+                { title: "Presupuesto al 71%",       time: "Hace 1 hora",  dot: "bg-yellow-500" },
+                { title: "Reporte mensual listo",    time: "Hace 3 horas", dot: "bg-purple-500" },
               ].map((n, i) => (
                 <div key={i} className="px-4 py-3 hover:bg-gray-50 transition cursor-pointer border-b border-gray-50 last:border-0 flex items-start gap-3">
-                  <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${n.color.split(" ")[0]}`} />
+                  <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${n.dot}`} />
                   <div>
                     <p className="text-sm text-gray-700 font-medium">{n.title}</p>
                     <p className="text-xs text-gray-400 mt-0.5">{n.time}</p>
@@ -87,13 +96,11 @@ export default function Header({ user, onLogout, sidebarCollapsed, onToggleSideb
               <p className="text-sm font-semibold text-gray-700 leading-tight">{user.name}</p>
               <p className="text-xs text-gray-400">{user.email}</p>
             </div>
-            <span className="hidden md:block">
-              <ChevronIcon />
-            </span>
+            <span className="hidden md:block"><ChevronIcon /></span>
           </button>
 
           {dropOpen && (
-            <div className="absolute right-0 top-12 w-48 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden z-50">
+            <div className="absolute right-0 top-14 w-48 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden z-50">
               <div className="px-4 py-3 border-b border-gray-50">
                 <p className="text-xs font-semibold text-gray-700">{user.name}</p>
                 <p className="text-xs text-gray-400">{user.email}</p>

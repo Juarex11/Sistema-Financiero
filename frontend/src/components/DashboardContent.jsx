@@ -59,10 +59,7 @@ export default function DashboardContent({ role }) {
   return (
     <div className="p-6 space-y-6">
       {/* Page title */}
-      <div>
-        <h1 className="text-xl font-bold text-gray-800">Dashboard</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Resumen financiero — Mayo 2026</p>
-      </div>
+     
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
