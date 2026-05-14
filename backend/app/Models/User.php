@@ -11,19 +11,16 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * Campos asignables masivamente.
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
-        'role',        // 'admin' | 'user'
+        'role',
+        'photo',        // base64 o URL de la imagen de perfil
+        'currency',     // código ISO 4217, ej: 'PEN', 'USD'
+        'cargo',        // cargo o empresa — se muestra en testimonios
     ];
 
-    /**
-     * Campos ocultos en serialización.
-     */
     protected $hidden = [
         'password',
         'remember_token',
@@ -34,9 +31,6 @@ class User extends Authenticatable
         'password'          => 'hashed',
     ];
 
-    /**
-     * Helper: comprueba si el usuario es admin.
-     */
     public function isAdmin(): bool
     {
         return $this->role === 'admin';

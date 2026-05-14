@@ -4,13 +4,26 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use App\Models\User;
 
 class AuthController extends Controller
 {
-    /**
-     * Login: valida credenciales y retorna token + info del usuario.
-     */
+    private function userArray(User $user): array
+    {
+        return [
+            'id'       => $user->id,
+            'name'     => $user->name,
+            'email'    => $user->email,
+            'role'     => $user->role,
+            'photo'    => $user->photo
+                            ? Storage::disk('public')->url($user->photo)
+                            : null,
+            'currency' => $user->currency ?? 'PEN',
+            'cargo'    => $user->cargo    ?? null,   // ← único cambio
+        ];
+    }
+
     public function login(Request $request)
     {
         $request->validate([
@@ -19,9 +32,7 @@ class AuthController extends Controller
         ]);
 
         if (!Auth::attempt($request->only('email', 'password'))) {
-            return response()->json([
-                'message' => 'Credenciales incorrectas.',
-            ], 401);
+            return response()->json(['message' => 'Credenciales incorrectas.'], 401);
         }
 
         /** @var User $user */
@@ -31,37 +42,18 @@ class AuthController extends Controller
         return response()->json([
             'token'      => $token,
             'token_type' => 'Bearer',
-            'user'       => [
-                'id'    => $user->id,
-                'name'  => $user->name,
-                'email' => $user->email,
-                'role'  => $user->role,   // 'admin' | 'user'
-            ],
+            'user'       => $this->userArray($user),
         ]);
     }
 
-    /**
-     * Logout: revoca el token actual.
-     */
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
-
         return response()->json(['message' => 'Sesión cerrada correctamente.']);
     }
 
-    /**
-     * Me: retorna el usuario autenticado.
-     */
     public function me(Request $request)
     {
-        $user = $request->user();
-
-        return response()->json([
-            'id'    => $user->id,
-            'name'  => $user->name,
-            'email' => $user->email,
-            'role'  => $user->role,
-        ]);
+        return response()->json($this->userArray($request->user()));
     }
 }
