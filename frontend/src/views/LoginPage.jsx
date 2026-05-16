@@ -74,14 +74,15 @@ export default function LoginPage({ onLogin }) {
         return;
       }
 
-      onLogin({
-        token:    data.token,
-        name:     data.user.name,
-        email:    data.user.email,
-        role:     data.user.role,
-        photo:    data.user.photo    ?? null,
-        currency: data.user.currency ?? "PEN",
-      });
+onLogin({
+  token:                 data.token,
+  name:                  data.user.name,
+  email:                 data.user.email,
+  role:                  data.user.role,
+  photo:                 data.user.photo    ?? null,
+  currency:              data.user.currency ?? "PEN",
+  onboarding_completado: data.onboarding_completado, // ← agrega esto
+});
     } catch (err) {
       setError(
         err.name === "AbortError"

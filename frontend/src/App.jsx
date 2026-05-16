@@ -1,144 +1,18 @@
 import { useState, useEffect, useCallback } from "react";
-import {
-  BrowserRouter, Routes, Route, Navigate,
-  useNavigate, useLocation,
-} from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 
-import Header          from "./components/Header";
-import Sidebar         from "./components/Sidebar";
-import LoadingScreen   from "./components/LoadingScreen";
-import LoginPage       from "./views/LoginPage";
-import AdminDashboard  from "./views/admin/AdminDashboard";
-import UserDashboard   from "./views/user/UserDashboard";
-import AnunciosPage    from "./views/AnunciosPage";
-import TestimoniosAdmin   from "./views/admin/TestimoniosAdmin";
-import TestimoniosUsuario from "./views/user/TestimoniosUsuario";
-import SettingsView    from "./views/SettingsPanel";
-import AgendaPage from "./views/eventos/AgendaPage";
-// ── Config ────────────────────────────────────────────────────────────────────
-const API_BASE = import.meta.env.VITE_API_URL;
+import { TokenStore }                from "./router/TokenStore";
+import { authFetch, normalizeUser }  from "./router/authFetch";
+import AppLayout                     from "./layouts/AppLayout";
+import LoadingScreen                 from "./components/LoadingScreen";
+import LoginPage                     from "./views/LoginPage";
+import OnboardingPage                from "./views/onboarding/OnboardingPage";
 
-// ── Token store ───────────────────────────────────────────────────────────────
-const TokenStore = {
-  save:  (t) => { try { localStorage.setItem("auth_token", t);    } catch {} },
-  load:  ()  => { try { return localStorage.getItem("auth_token"); } catch { return null; } },
-  clear: ()  => { try { localStorage.removeItem("auth_token");     } catch {} },
-};
-
-// ── Fetch autenticado con timeout de 8 s ──────────────────────────────────────
-async function authFetch(endpoint, token, options = {}) {
-  const controller = new AbortController();
-  const tid = setTimeout(() => controller.abort(), 8_000);
-  try {
-    const res = await fetch(`${API_BASE}${endpoint}`, {
-      ...options,
-      signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-        ...options.headers,
-      },
-    });
-    return res;
-  } finally {
-    clearTimeout(tid);
-  }
-}
-
-// ── Normaliza sesión ──────────────────────────────────────────────────────────
-function normalizeUser(token, user) {
-  return {
-    token,
-    name:     user.name,
-    email:    user.email,
-    role:     user.role,
-    photo:    user.photo    ?? null,
-    currency: user.currency ?? "PEN",
-    cargo:    user.cargo    ?? null,
-  };
-}
-
-// ── Layout principal ──────────────────────────────────────────────────────────
-function AppLayout({ session, onLogout, onUpdateUser }) {
-  const [collapsed,             setCollapsed]             = useState(false);
-  const [mobileOpen,            setMobileOpen]            = useState(false);
-  const [pendientesTestimonios, setPendientesTestimonios] = useState(0);
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  // Badge de testimonios pendientes — visible desde cualquier vista
-  useEffect(() => {
-    if (session.role !== "admin") return;
-    authFetch("/admin/testimonios?estado=pendiente", session.token)
-      .then(r => r.ok ? r.json() : [])
-      .then(data => setPendientesTestimonios(Array.isArray(data) ? data.length : 0))
-      .catch(() => {});
-  }, [session.token, session.role]);
-
-  return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      <Header
-        user={session}
-        onLogout={onLogout}
-        sidebarCollapsed={collapsed}
-        onToggleSidebar={() => setCollapsed(c => !c)}
-        onMobileMenuToggle={() => setMobileOpen(o => !o)}
-        onOpenSettings={() => navigate("/ajustes")}
-      />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar
-          collapsed={collapsed}
-          mobileOpen={mobileOpen}
-          onMobileClose={() => setMobileOpen(false)}
-          role={session.role}
-          activePage={location.pathname}
-          onNavigate={(path) => { navigate(path); setMobileOpen(false); }}
-          pendientesTestimonios={pendientesTestimonios}
-        />
-        <main className="flex-1 overflow-y-auto">
-          <Routes>
-            <Route
-              path="/dashboard"
-              element={
-                session.role === "admin"
-                  ? <AdminDashboard user={session} onLogout={onLogout} />
-                  : <UserDashboard  user={session} onLogout={onLogout} />
-              }
-            />
-            <Route
-              path="/anuncios"
-              element={<AnunciosPage user={session} />}
-            />
-            <Route
-  path="/agenda"
-  element={<AgendaPage user={session} />}
-/>
-            <Route
-              path="/testimonios"
-              element={
-                session.role === "admin"
-                  ? <TestimoniosAdmin   user={session} onPendientesChange={setPendientesTestimonios} />
-                  : <TestimoniosUsuario user={session} />
-              }
-            />
-            <Route
-              path="/ajustes"
-              element={<SettingsView user={session} onUpdateUser={onUpdateUser} />}
-            />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </main>
-      </div>
-    </div>
-  );
-}
-
-// ── Inner App ─────────────────────────────────────────────────────────────────
 function InnerApp() {
   const navigate = useNavigate();
-  const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [session,           setSession]           = useState(null);
+  const [loading,           setLoading]           = useState(true);
+  const [onboardingPending, setOnboardingPending] = useState(false);
 
   useEffect(() => {
     const token = TokenStore.load();
@@ -150,7 +24,20 @@ function InnerApp() {
       .then(async (res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const user = await res.json();
-        if (!cancelled) setSession(normalizeUser(token, user));
+        if (cancelled) return;
+
+        if (user.role === "admin") {
+          setSession(normalizeUser(token, user));
+          setOnboardingPending(false);
+          return;
+        }
+
+        const ob     = await authFetch("/onboarding", token);
+        const obData = await ob.json();
+        if (cancelled) return;
+
+        setSession(normalizeUser(token, user));
+        setOnboardingPending(!obData.completado);
       })
       .catch(() => {
         if (!cancelled) { TokenStore.clear(); setSession(null); }
@@ -165,7 +52,9 @@ function InnerApp() {
   const handleLogin = useCallback((data) => {
     TokenStore.save(data.token);
     setSession(normalizeUser(data.token, data));
-    navigate("/dashboard", { replace: true });
+    const pendiente = !data.onboarding_completado && data.role !== "admin";
+    setOnboardingPending(pendiente);
+    navigate(pendiente ? "/onboarding" : "/dashboard", { replace: true });
   }, [navigate]);
 
   const handleLogout = useCallback(async () => {
@@ -175,6 +64,7 @@ function InnerApp() {
     }
     TokenStore.clear();
     setSession(null);
+    setOnboardingPending(false);
     navigate("/login", { replace: true });
   }, [navigate]);
 
@@ -182,22 +72,32 @@ function InnerApp() {
     setSession(prev => prev ? { ...prev, ...patch } : prev);
   }, []);
 
+  const handleOnboardingComplete = useCallback((moneda) => {
+    setOnboardingPending(false);
+    handleUpdateUser({ currency: moneda });
+    navigate("/dashboard", { replace: true });
+  }, [navigate, handleUpdateUser]);
+
   if (loading) return <LoadingScreen />;
+
+  if (!session) return (
+    <Routes>
+      <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+      <Route path="*"      element={<Navigate to="/login" replace />} />
+    </Routes>
+  );
+
+  if (onboardingPending) return (
+    <Routes>
+      <Route path="/onboarding" element={<OnboardingPage user={session} onComplete={handleOnboardingComplete} />} />
+      <Route path="*"           element={<Navigate to="/onboarding" replace />} />
+    </Routes>
+  );
 
   return (
     <Routes>
-      <Route
-        path="/login"
-        element={!session ? <LoginPage onLogin={handleLogin} /> : <Navigate to="/dashboard" replace />}
-      />
-      <Route
-        path="/*"
-        element={
-          session
-            ? <AppLayout key={session.role} session={session} onLogout={handleLogout} onUpdateUser={handleUpdateUser} />
-            : <Navigate to="/login" replace />
-        }
-      />
+      <Route path="/login" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/*"     element={<AppLayout key={session.role} session={session} onLogout={handleLogout} onUpdateUser={handleUpdateUser} />} />
     </Routes>
   );
 }
