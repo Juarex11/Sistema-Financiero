@@ -2,10 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\UserOnboarding;
+use App\Models\IngresoConfig;
+use App\Models\Ingreso;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
@@ -16,9 +21,9 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
-        'photo',        // base64 o URL de la imagen de perfil
-        'currency',     // código ISO 4217, ej: 'PEN', 'USD'
-        'cargo',        // cargo o empresa — se muestra en testimonios
+        'photo',
+        'currency',
+        'cargo',
     ];
 
     protected $hidden = [
@@ -34,5 +39,25 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    public function onboarding(): HasOne
+    {
+        return $this->hasOne(UserOnboarding::class);
+    }
+
+    public function onboardingCompletado(): bool
+    {
+        return $this->onboarding?->completado === true;
+    }
+
+    public function ingresoConfig(): HasOne
+    {
+        return $this->hasOne(IngresoConfig::class);
+    }
+
+    public function ingresos(): HasMany
+    {
+        return $this->hasMany(Ingreso::class);
     }
 }

@@ -6,6 +6,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TestimonioController;
 use App\Http\Controllers\AnuncioController;
 use App\Http\Controllers\AgendaController;
+use App\Http\Controllers\OnboardingController;
+use App\Http\Controllers\IngresoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,6 +33,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post  ('/me/photo',    [ProfileController::class, 'uploadPhoto']);
     Route::delete('/me/photo',    [ProfileController::class, 'removePhoto']);
     Route::put   ('/me/password', [ProfileController::class, 'changePassword']);
+
+    // Onboarding ← NUEVO
+    Route::get ('/onboarding', [OnboardingController::class, 'estado']);
+    Route::post('/onboarding', [OnboardingController::class, 'guardar']);
+
+     // Configuración de ingresos
+    Route::get ('/ingresos/config', [IngresoController::class, 'config']);
+    Route::post('/ingresos/config', [IngresoController::class, 'guardarConfig']);
+
+    // Ingresos
+    Route::get   ('/ingresos',                    [IngresoController::class, 'index']);
+    Route::post  ('/ingresos',                    [IngresoController::class, 'store']);
+    Route::put   ('/ingresos/{ingreso}',          [IngresoController::class, 'update']);
+    Route::delete('/ingresos/{ingreso}',          [IngresoController::class, 'destroy']);
+    Route::patch ('/ingresos/{ingreso}/confirmar',[IngresoController::class, 'confirmar']);
 
     // Testimonios (usuario)
     Route::get   ('/testimonios/mio', [TestimonioController::class, 'mio']);

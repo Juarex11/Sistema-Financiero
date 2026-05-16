@@ -24,27 +24,28 @@ class AuthController extends Controller
         ];
     }
 
-    public function login(Request $request)
-    {
-        $request->validate([
-            'email'    => 'required|email',
-            'password' => 'required|string|min:6',
-        ]);
+public function login(Request $request)
+{
+    $request->validate([
+        'email'    => 'required|email',
+        'password' => 'required|string|min:6',
+    ]);
 
-        if (!Auth::attempt($request->only('email', 'password'))) {
-            return response()->json(['message' => 'Credenciales incorrectas.'], 401);
-        }
-
-        /** @var User $user */
-        $user  = Auth::user();
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'token'      => $token,
-            'token_type' => 'Bearer',
-            'user'       => $this->userArray($user),
-        ]);
+    if (!Auth::attempt($request->only('email', 'password'))) {
+        return response()->json(['message' => 'Credenciales incorrectas.'], 401);
     }
+
+    /** @var User $user */
+    $user  = Auth::user();
+    $token = $user->createToken('auth_token')->plainTextToken;
+
+    return response()->json([
+        'token'                  => $token,
+        'token_type'             => 'Bearer',
+        'user'                   => $this->userArray($user),
+        'onboarding_completado'  => $user->onboardingCompletado(), // ← NUEVO
+    ]);
+}
 
     public function logout(Request $request)
     {
