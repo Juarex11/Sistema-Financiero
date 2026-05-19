@@ -12,21 +12,29 @@ useEffect(() => {
   document.body.style.overflow = "hidden";
   // config siempre llega precargado desde onboarding
   setForm({
-    tipo:        config?.tipo        ?? "fijo",
-    monto_base:  config?.monto_base  ?? "",
-    dia_pago:    config?.dia_pago    ?? 1,
-    descripcion: config?.descripcion ?? "",
+tipo:        config.tipo,
+monto_base:  config.monto_base  ?? "",
+dia_pago: config.dia_pago > 0 ? config.dia_pago : "",
+descripcion: config.descripcion ?? "",
     moneda:      user.currency,
   });
   return () => { document.body.style.overflow = ""; };
 }, []);
 
-  const handleSave = async () => {
+const handleSave = async () => {
+    const d = parseInt(form.dia_pago);
+    if ((form.tipo === "fijo" || form.tipo === "mixto") && (!d || d < 1 || d > 31)) {
+        setError("El día de pago debe ser entre 1 y 31.");
+        return;
+    }
     setSaving(true);
     try {
       const res = await authFetch("/ingresos/config", user.token, {
         method: "POST",
-        body: JSON.stringify(form),
+       body: JSON.stringify({
+    ...form,
+    dia_pago: parseInt(form.dia_pago) || 0,
+}),
       });
       if (!res.ok) { const d = await res.json(); setError(d.message || "Error."); return; }
       onSaved();
@@ -90,7 +98,8 @@ useEffect(() => {
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Día de pago (1-31)</label>
                   <input type="number" min="1" max="31"
-                    value={form.dia_pago} onChange={e => setForm(f => ({ ...f, dia_pago: parseInt(e.target.value) }))}
+                    value={form.dia_pago} onChange={e => setForm(f => ({ ...f, dia_pago: e.target.value === "" ? "" : parseInt(e.target.value) }))}
+
                     className="w-full border border-gray-200 rounded-xl px-4 py-3 text-gray-800 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
                   />
                   <p className="text-xs text-gray-400 mt-1">El sistema proyectará tu ingreso en esa fecha cada mes.</p>

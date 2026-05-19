@@ -9,8 +9,9 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
 } from "recharts";
-import ModalIngreso from "./ModalIngreso";
-import ModalConfig  from "./ModalConfig";
+import ModalIngreso  from "./ModalIngreso";
+import ModalConfig   from "./ModalConfig";
+import ModalDiaPago  from "./ModalDiaPago";
 
 const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
@@ -48,6 +49,7 @@ export default function IngresosPage({ user }) {
   const [resumen,  setResumen]  = useState({ total_confirmado: 0, total_proyectado: 0 });
   const [loading,  setLoading]  = useState(true);
   const [chartData, setChartData] = useState([]);
+const [showModalDiaPago, setShowModalDiaPago] = useState(false);
 
   const [showModalIngreso, setShowModalIngreso] = useState(false);
   const [showModalConfig,  setShowModalConfig]  = useState(false);
@@ -65,6 +67,9 @@ const cargar = async () => {
     const ing = rIngresos.ok ? await rIngresos.json() : { ingresos: [], total_confirmado: 0, total_proyectado: 0 };
 
     setConfig(cfg);
+    if (cfg && cfg.dia_pago === 0) {
+    setShowModalDiaPago(true);
+}
       setIngresos(ing.ingresos ?? []);
       setResumen({ total_confirmado: ing.total_confirmado, total_proyectado: ing.total_proyectado });
 
@@ -117,7 +122,8 @@ const cargar = async () => {
           <p className="text-sm text-gray-400 mt-0.5">Gestiona y visualiza tus ingresos mensuales</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setShowModalConfig(true)}
+        <button onClick={() => config && setShowModalConfig(true)}
+  disabled={loading || !config}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition-all">
             <Settings size={16} /> Configurar
           </button>
@@ -182,10 +188,15 @@ const cargar = async () => {
           {config.tipo === "mixto"    && "Mixto"}
         </span>
         {config.monto_base && (
-          <span className="text-xs bg-purple-500 text-purple-100 px-2 py-0.5 rounded-full font-semibold">
-            Base: {fmt(config.monto_base, user.currency)}
-          </span>
-        )}
+  <span className="text-xs bg-purple-500 text-purple-100 px-2 py-0.5 rounded-full font-semibold">
+    Base: {fmt(config.monto_base, user.currency)}
+  </span>
+)}
+{config.dia_pago > 0 && (
+  <span className="text-xs bg-purple-500 text-purple-100 px-2 py-0.5 rounded-full font-semibold">
+    Día {config.dia_pago} de cada mes
+  </span>
+)}
       </>
     ) : (
       <span className="text-xs text-purple-300">Sin configurar</span>
@@ -252,7 +263,14 @@ const cargar = async () => {
                     )}
                   </div>
                   <p className="text-xs text-gray-400">
-                    {new Date(ing.fecha).toLocaleDateString("es-PE", { day: "numeric", month: "long", year: "numeric" })}
+                  {(() => {
+  if (!ing.fecha) return "Sin fecha";
+  const partes = ing.fecha.split("T")[0].split("-");
+  if (partes.length < 3) return "Sin fecha";
+  const [y, m, d] = partes;
+  return new Date(Number(y), Number(m) - 1, Number(d))
+    .toLocaleDateString("es-PE", { day: "numeric", month: "long", year: "numeric" });
+})()}
                   </p>
                 </div>
                 <p className={`text-base font-bold shrink-0 ${ing.confirmado ? "text-gray-900" : "text-gray-400"}`}>
@@ -278,12 +296,19 @@ const cargar = async () => {
         )}
       </div>
 
-      {showModalIngreso && (
-        <ModalIngreso user={user} config={config} onClose={() => setShowModalIngreso(false)} onSaved={cargar} />
-      )}
-      {showModalConfig && (
-        <ModalConfig user={user} config={config} onClose={() => setShowModalConfig(false)} onSaved={cargar} />
-      )}
+  {showModalIngreso && (
+    <ModalIngreso user={user} config={config} onClose={() => setShowModalIngreso(false)} onSaved={cargar} />
+)}
+{showModalConfig && (
+    <ModalConfig user={user} config={config} onClose={() => setShowModalConfig(false)} onSaved={cargar} />
+)}
+{showModalDiaPago && (
+    <ModalDiaPago
+        user={user}
+        config={config}
+        onSaved={() => { setShowModalDiaPago(false); cargar(); }}
+    />
+)}
     </div>
   );
 }
