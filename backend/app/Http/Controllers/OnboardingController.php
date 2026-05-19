@@ -36,7 +36,7 @@ class OnboardingController extends Controller
             'meta_principal'  => 'nullable|in:ahorrar_mas,controlar_gastos,salir_deudas,meta_especifica',
             'ultimo_paso'     => 'required|integer|min:1|max:4',
             'completado'      => 'nullable|boolean',
-            'inicio_desde'    => 'nullable|in:actual,proximo',
+            'inicio_desde'    => 'nullable|in:actual,proximo',  // ← limpio
         ]);
 
         $onboarding = UserOnboarding::updateOrCreate(
@@ -55,23 +55,20 @@ class OnboardingController extends Controller
                 [
                     'tipo'       => $data['tipo_ingreso'],
                     'monto_base' => $data['ingreso_mensual'] ?? null,
-                    'dia_pago'   => 1,
+                    'dia_pago'   => 0,
                     'moneda'     => $data['moneda'] ?? $user->currency ?? 'PEN',
                 ]
             );
 
-            $inicio = $data['inicio_desde'] ?? 'actual';
+            $inicio = $data['inicio_desde'] ?? 'proximo';
 
-            if (
-                in_array($data['tipo_ingreso'], ['fijo', 'mixto'])
-                && !empty($data['ingreso_mensual'])
-                && $inicio === 'actual'
-            ) {
+            if (!empty($data['ingreso_mensual']) && $inicio === 'actual') {
+
                 $config = $user->fresh()->ingresoConfig;
 
                 if ($config) {
-                    $hoy   = now();
-                    $fecha = Carbon::create($hoy->year, $hoy->month, min($config->dia_pago, $hoy->daysInMonth));
+                   $hoy = now();
+
 
                     $existe = Ingreso::where('user_id', $user->id)
                         ->where('tipo', 'fijo')
@@ -79,18 +76,18 @@ class OnboardingController extends Controller
                         ->where('anio', $hoy->year)
                         ->exists();
 
-                    if (!$existe) {
-                        Ingreso::create([
-                            'user_id'     => $user->id,
-                            'monto'       => $config->monto_base,
-                            'moneda'      => $config->moneda,
-                            'fecha'       => $fecha->toDateString(),
-                            'descripcion' => $config->descripcion ?? 'Ingreso fijo mensual',
-                            'tipo'        => 'fijo',
-                            'confirmado'  => false,
-                            'mes'         => $hoy->month,
-                            'anio'        => $hoy->year,
-                        ]);
+                 if (!$existe) {
+    Ingreso::create([
+        'user_id'     => $user->id,
+        'monto'       => $config->monto_base,
+        'moneda'      => $config->moneda,
+        'fecha'       => $hoy->toDateString(),  // ← fecha de hoy
+        'descripcion' => $config->descripcion ?? 'Ingreso fijo mensual',
+        'tipo'        => 'fijo',
+        'confirmado'  => true,
+        'mes'         => $hoy->month,
+        'anio'        => $hoy->year,
+    ]);
                     }
                 }
             }

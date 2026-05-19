@@ -24,7 +24,7 @@ public function guardarConfig(Request $request)
     $data = $request->validate([
         'tipo'        => 'required|in:fijo,variable,mixto',
         'monto_base'  => 'nullable|numeric|min:0',
-        'dia_pago'    => 'required|integer|min:1|max:31',
+        'dia_pago'    => 'required|integer|min:0|max:31',
         'descripcion' => 'nullable|string|max:100',
         'moneda'      => 'nullable|string|size:3',
     ]);
@@ -34,17 +34,11 @@ public function guardarConfig(Request $request)
         $data
     );
 
-    // ← cambia proyectarIngresoFijo por proyectarIngresoFijoPublic
-    if (in_array($data['tipo'], ['fijo', 'mixto']) && $data['monto_base']) {
-        $this->proyectarIngresoFijoPublic($request->user(), $config);
-    }
-
     return response()->json([
         'message' => 'Configuración guardada.',
         'config'  => $config,
     ]);
 }
-
     // ── Ingresos ──────────────────────────────────────────────────────────────
 
     // Listar ingresos de un mes/año
