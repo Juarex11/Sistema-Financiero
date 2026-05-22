@@ -8,6 +8,9 @@ use App\Http\Controllers\AnuncioController;
 use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\IngresoController;
+use App\Http\Controllers\TicketController;
+use App\Http\Controllers\EntradaController;
+use App\Http\Controllers\GastoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -66,6 +69,47 @@ Route::middleware('auth:sanctum')->group(function () {
         ]);
     });
 
+    // Categorías de gastos
+Route::get   ('/gastos/categorias',             [GastoController::class, 'categorias']);
+Route::post  ('/gastos/categorias',             [GastoController::class, 'storeCategoria']);
+Route::put   ('/gastos/categorias/{categoria}', [GastoController::class, 'updateCategoria']);
+Route::delete('/gastos/categorias/{categoria}', [GastoController::class, 'destroyCategoria']);
+
+// Gastos fijos
+Route::get   ('/gastos',                  [GastoController::class, 'index']);
+Route::post  ('/gastos',                  [GastoController::class, 'store']);
+Route::put   ('/gastos/{gasto}',          [GastoController::class, 'update']);
+Route::delete('/gastos/{gasto}',          [GastoController::class, 'destroy']);
+Route::patch ('/gastos/{gasto}/toggle',   [GastoController::class, 'toggleActivo']);
+
+// Movimientos
+Route::get  ('/gastos/movimientos',                          [GastoController::class, 'movimientos']);
+Route::get  ('/gastos/pendientes',                           [GastoController::class, 'pendientes']);
+Route::patch('/gastos/movimientos/{movimiento}/confirmar',   [GastoController::class, 'confirmarPago']);
+Route::patch('/gastos/movimientos/{movimiento}/eliminar',    [GastoController::class, 'eliminarPendiente']);
+
+    // Billetera
+Route::get('/billetera', [EntradaController::class, 'billetera']);
+Route::get('/billetera/movimientos', [EntradaController::class, 'movimientos']);
+
+// Categorías
+Route::get   ('/entradas/categorias',              [EntradaController::class, 'categorias']);
+Route::post  ('/entradas/categorias',              [EntradaController::class, 'storeCategoria']);
+Route::put   ('/entradas/categorias/{categoria}',  [EntradaController::class, 'updateCategoria']);
+Route::delete('/entradas/categorias/{categoria}',  [EntradaController::class, 'destroyCategoria']);
+
+// Entradas fijas
+Route::get   ('/entradas',                  [EntradaController::class, 'index']);
+Route::post  ('/entradas',                  [EntradaController::class, 'store']);
+Route::put   ('/entradas/{entrada}',        [EntradaController::class, 'update']);
+Route::delete('/entradas/{entrada}',        [EntradaController::class, 'destroy']);
+Route::patch ('/entradas/{entrada}/toggle', [EntradaController::class, 'toggleActivo']);
+
+    Route::get   ('/tickets',                        [TicketController::class, 'index']);
+Route::post  ('/tickets',                        [TicketController::class, 'store']);
+Route::get   ('/tickets/{ticket}',               [TicketController::class, 'show']);
+Route::post  ('/tickets/{ticket}/responder',     [TicketController::class, 'responder']);
+
     // ── Agenda ────────────────────────────────────────────────────────────────
     Route::prefix('agenda')->group(function () {
 
@@ -113,5 +157,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch ('/anuncios/{anuncio}/anclar',      [AnuncioController::class, 'toggleAnclado']);
         Route::post  ('/anuncios/{anuncio}/imagen',      [AnuncioController::class, 'subirImagen']);
         Route::delete('/anuncios/{anuncio}/imagen',      [AnuncioController::class, 'eliminarImagen']);
+
+         Route::get   ('/tickets',                        [TicketController::class, 'adminIndex']);
+    Route::get   ('/tickets/{ticket}',               [TicketController::class, 'adminShow']);
+    Route::post  ('/tickets/{ticket}/responder',     [TicketController::class, 'adminResponder']);
+    Route::patch ('/tickets/{ticket}/estado',        [TicketController::class, 'cambiarEstado']);
     });
 });

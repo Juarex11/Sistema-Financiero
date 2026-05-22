@@ -18,7 +18,7 @@ class ProyectarIngresosFijos extends Command
             ? Carbon::parse($this->option('fecha'))
             : now();
 
-        $configs = IngresoConfig::whereIn('tipo', ['fijo', 'mixto'])
+$configs = IngresoConfig::where('tipo', 'fijo')
             ->whereNotNull('monto_base')
             ->where('dia_pago', '!=', 0)
             ->get();
