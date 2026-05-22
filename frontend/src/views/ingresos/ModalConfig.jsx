@@ -67,9 +67,12 @@ const handleSave = async () => {
                   {[
                     { value: "fijo",     label: "Fijo"     },
                     { value: "variable", label: "Variable" },
-                    { value: "mixto",    label: "Mixto"    },
                   ].map(op => (
-                    <button key={op.value} type="button" onClick={() => setForm(f => ({ ...f, tipo: op.value }))}
+                    <button key={op.value} type="button" onClick={() => setForm(f => ({
+    ...f,
+    tipo: op.value,
+    dia_pago: op.value === "variable" ? 0 : f.dia_pago,
+}))}
                       className={`py-2.5 rounded-xl text-sm font-semibold border-2 transition-all ${
                         form.tipo === op.value ? "border-purple-500 bg-purple-50 text-purple-700" : "border-gray-100 bg-gray-50 text-gray-500"
                       }`}>
@@ -79,10 +82,11 @@ const handleSave = async () => {
                 </div>
               </div>
 
-              {(form.tipo === "fijo" || form.tipo === "mixto") && (
+{form.tipo === "fijo" && (
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">
-                    {form.tipo === "mixto" ? "Monto base fijo" : "Monto mensual"}
+                    Monto mensual
+
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-semibold">{form.moneda}</span>
@@ -94,7 +98,7 @@ const handleSave = async () => {
                 </div>
               )}
 
-              {(form.tipo === "fijo" || form.tipo === "mixto") && (
+{form.tipo === "fijo" && (
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Día de pago (1-31)</label>
                   <input type="number" min="1" max="31"

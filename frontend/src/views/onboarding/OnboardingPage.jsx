@@ -28,6 +28,7 @@ async function saveStep(token, body) {
 function Paso1({ data, onChange }) {
   return (
     <div className="space-y-6">
+
       <div>
         <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Moneda</label>
         <select
@@ -41,49 +42,78 @@ function Paso1({ data, onChange }) {
         </select>
       </div>
 
+      {/* Tipo de salario primero */}
       <div>
-        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Ingreso mensual aproximado</label>
-        <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-semibold">{data.moneda}</span>
-          <input
-            type="number" min="0" placeholder="3500"
-            value={data.ingreso_mensual}
-            onChange={e => onChange("ingreso_mensual", e.target.value)}
-            className="w-full border border-gray-200 pl-16 pr-4 py-3 text-gray-800 text-sm outline-none focus:border-purple-500 transition-all bg-white placeholder-gray-300"
-          />
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Tipo de ingreso</label>
-        <div className="grid grid-cols-3 gap-3">
+        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">¿Cómo recibes tu salario?</label>
+        <p className="text-xs text-gray-400 mb-3">Esto nos ayuda a registrar tu dinero de forma automática.</p>
+        <div className="grid grid-cols-2 gap-3">
           {[
-            { value: "fijo",     Icon: Briefcase,       label: "Fijo"     },
-            { value: "variable", Icon: TrendingUp,      label: "Variable" },
-            { value: "mixto",    Icon: ArrowLeftRight,  label: "Mixto"    },
-          ].map(({ value, Icon, label }) => (
+            {
+              value: "fijo",
+              Icon: Briefcase,
+              label: "Salario fijo",
+              sub: "Recibo el mismo monto cada mes en una fecha fija",
+            },
+            {
+              value: "variable",
+              Icon: TrendingUp,
+              label: "Salario variable",
+              sub: "Mi ingreso cambia cada mes según mis horas o comisiones",
+            },
+          ].map(({ value, Icon, label, sub }) => (
             <button key={value} type="button" onClick={() => onChange("tipo_ingreso", value)}
-              className={`flex flex-col items-center gap-2.5 py-5 border transition-all ${
+              className={`flex flex-col gap-2 py-5 px-4 border text-left transition-all ${
                 data.tipo_ingreso === value
                   ? "border-purple-500 bg-purple-50 text-purple-700"
                   : "border-gray-200 bg-white text-gray-400 hover:border-purple-300 hover:bg-purple-50/30"
               }`}>
-              <Icon size={28} strokeWidth={1.5} />
-              <span className="text-xs font-semibold">{label}</span>
+              <Icon size={26} strokeWidth={1.5} className={data.tipo_ingreso === value ? "text-purple-600" : "text-gray-400"} />
+              <span className={`text-sm font-bold ${data.tipo_ingreso === value ? "text-purple-700" : "text-gray-700"}`}>
+                {label}
+              </span>
+              <span className="text-xs text-gray-400 leading-relaxed">{sub}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* ← NUEVA PREGUNTA */}
+      {/* Monto aproximado — solo si eligió tipo */}
+      {data.tipo_ingreso && (
+        <div>
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+            {data.tipo_ingreso === "fijo" ? "¿Cuánto recibes cada mes?" : "¿Cuánto recibes aproximadamente?"}
+          </label>
+          <p className="text-xs text-gray-400 mb-2">
+            {data.tipo_ingreso === "fijo"
+              ? "Este monto se registrará automáticamente cada mes."
+              : "Usaremos este monto como referencia. Podrás ajustarlo cada mes."}
+          </p>
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-semibold">{data.moneda}</span>
+            <input
+              type="number" min="0" placeholder="3500"
+              value={data.ingreso_mensual}
+              onChange={e => onChange("ingreso_mensual", e.target.value)}
+              className="w-full border border-gray-200 pl-16 pr-4 py-3 text-gray-800 text-sm outline-none focus:border-purple-500 transition-all bg-white placeholder-gray-300"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ¿Desde cuándo? */}
       {data.ingreso_mensual && data.tipo_ingreso && (
         <div>
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
             ¿Este monto aplica desde cuándo?
           </label>
+          <p className="text-xs text-gray-400 mb-3">
+            {data.tipo_ingreso === "fijo"
+              ? "Si ya lo recibiste este mes, lo registraremos ahora."
+              : "Si ya trabajaste este mes, registra tu ingreso ahora."}
+          </p>
           <div className="grid grid-cols-2 gap-3">
             {[
-              { value: "actual", label: "Este mes", sub: "Ya lo recibí o lo recibiré este mes" },
+              { value: "actual",  label: "Este mes",    sub: "Ya lo recibí o lo recibiré este mes" },
               { value: "proximo", label: "Próximo mes", sub: "Empieza a contar desde el mes que viene" },
             ].map(op => (
               <button key={op.value} type="button" onClick={() => onChange("inicio_desde", op.value)}
@@ -101,6 +131,7 @@ function Paso1({ data, onChange }) {
           </div>
         </div>
       )}
+
     </div>
   );
 }

@@ -7,6 +7,7 @@ export default function ModalDiaPago({ user, config, onSaved }) {
     const [dia, setDia]       = useState("");
     const [saving, setSaving] = useState(false);
     const [error, setError]   = useState("");
+    const esVariable = config?.tipo === "variable";
 
     const handleSave = async () => {
         const d = parseInt(dia);
@@ -40,9 +41,12 @@ export default function ModalDiaPago({ user, config, onSaved }) {
                     <div className="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                         <Calendar size={26} className="text-purple-600" />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-800">¿Qué día recibes tu pago?</h3>
+                    <h3 className="text-lg font-bold text-gray-800">¿Qué día cobras?</h3>
                     <p className="text-sm text-gray-400 mt-1">
-                        El sistema usará este día para registrar tu ingreso automáticamente cada mes.
+                        {esVariable
+                            ? "Cada mes en ese día te preguntaremos cuánto ganaste para que lo registres."
+                            : "El sistema registrará tu ingreso automáticamente ese día cada mes."
+                        }
                     </p>
                 </div>
 

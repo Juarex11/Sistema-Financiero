@@ -12,7 +12,13 @@ import TestimoniosAdmin   from "../views/admin/TestimoniosAdmin";
 import TestimoniosUsuario from "../views/user/TestimoniosUsuario";
 import SettingsView       from "../views/SettingsPanel";
 import IngresosPage from "../views/ingresos/IngresosPage";
-
+import HistorialSalarialPage from "../views/ingresos/HistorialSalarialPage";
+import SoportePage      from "../views/soporte/SoportePage";
+import SoporteAdminPage from "../views/soporte/SoporteAdminPage";
+import MisEntradasPage from "../views/entradas/MisEntradasPage";
+import HistorialEntradasPage from "../views/entradas/HistorialEntradasPage";
+import GastosPage          from "../views/gastos/GastosPage";
+import HistorialGastosPage from "../views/gastos/HistorialGastosPage";
 export default function AppLayout({ session, onLogout, onUpdateUser }) {
   const [collapsed,             setCollapsed]             = useState(false);
   const [mobileOpen,            setMobileOpen]            = useState(false);
@@ -58,7 +64,7 @@ export default function AppLayout({ session, onLogout, onUpdateUser }) {
             <Route path="/anuncios"    element={<AnunciosPage user={session} />} />
             <Route path="/agenda"      element={<AgendaPage   user={session} />} />
             <Route path="/ingresos" element={<IngresosPage user={session} />} />
-
+<Route path="/ingresos/historial" element={<HistorialSalarialPage user={session} />} />
             <Route path="/testimonios" element={
               session.role === "admin"
                 ? <TestimoniosAdmin   user={session} onPendientesChange={setPendientesTestimonios} />
@@ -66,7 +72,18 @@ export default function AppLayout({ session, onLogout, onUpdateUser }) {
             } />
             <Route path="/ajustes" element={<SettingsView user={session} onUpdateUser={onUpdateUser} />} />
             <Route path="*"        element={<Navigate to="/dashboard" replace />} />
-          </Routes>
+            <Route path="/soporte" element={
+  session.role === "admin"
+    ? <SoporteAdminPage user={session} />
+    : <SoportePage      user={session} />
+} />
+<Route path="/soporte/:id" element={
+  session.role === "admin"
+    ? <SoporteAdminPage user={session} />
+    : <SoportePage      user={session} />
+} /><Route path="/mis-entradas" element={<MisEntradasPage user={session} />} />
+<Route path="/mis-entradas/historial" element={<HistorialEntradasPage user={session} />} />          <Route path="/gastos"            element={<GastosPage          user={session} />} />
+<Route path="/gastos/historial"  element={<HistorialGastosPage user={session} />} /></Routes>
         </main>
       </div>
     </div>

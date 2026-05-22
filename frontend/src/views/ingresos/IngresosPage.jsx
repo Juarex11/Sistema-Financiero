@@ -3,12 +3,14 @@ import { authFetch } from "../../router/authFetch";
 import {
   TrendingUp, Plus, Check, Trash2,
   DollarSign, Calendar, AlertCircle, Settings,
-  ChevronLeft, ChevronRight, RefreshCw,
+  ChevronLeft, ChevronRight, RefreshCw, History,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
 } from "recharts";
+import { useNavigate } from "react-router-dom";
+
 import ModalIngreso  from "./ModalIngreso";
 import ModalConfig   from "./ModalConfig";
 import ModalDiaPago  from "./ModalDiaPago";
@@ -40,38 +42,59 @@ function CustomTooltip({ active, payload, label, moneda }) {
 }
 
 export default function IngresosPage({ user }) {
-  const hoy  = new Date();
+  const hoy    = new Date();
+  const diaHoy = hoy.getDate();
+  const navigate = useNavigate();
+
   const [mes,  setMes]  = useState(hoy.getMonth() + 1);
   const [anio, setAnio] = useState(hoy.getFullYear());
 
-  const [config,   setConfig]   = useState(null);
-  const [ingresos, setIngresos] = useState([]);
-  const [resumen,  setResumen]  = useState({ total_confirmado: 0, total_proyectado: 0 });
-  const [loading,  setLoading]  = useState(true);
+  const [config,    setConfig]    = useState(null);
+  const [ingresos,  setIngresos]  = useState([]);
+  const [resumen,   setResumen]   = useState({ total_confirmado: 0, total_proyectado: 0 });
+  const [loading,   setLoading]   = useState(true);
   const [chartData, setChartData] = useState([]);
-const [showModalDiaPago, setShowModalDiaPago] = useState(false);
 
-  const [showModalIngreso, setShowModalIngreso] = useState(false);
-  const [showModalConfig,  setShowModalConfig]  = useState(false);
+  const [showModalDiaPago,            setShowModalDiaPago]            = useState(false);
+  const [showModalIngreso,            setShowModalIngreso]            = useState(false);
+  const [showModalIngresoObligatorio, setShowModalIngresoObligatorio] = useState(false);
+  const [showModalConfig,             setShowModalConfig]             = useState(false);
 
-const cargar = async () => {
-  setLoading(true);
-  try {
-    const [rConfig, rIngresos] = await Promise.all([
-      authFetch("/ingresos/config", user.token),
-      authFetch(`/ingresos?mes=${mes}&anio=${anio}`, user.token),
-    ]);
-    const cfg = rConfig.ok ? await rConfig.json() : null;
-    console.log("CFG STATUS:", rConfig.status);
-    console.log("CFG VALUE:", cfg);
-    const ing = rIngresos.ok ? await rIngresos.json() : { ingresos: [], total_confirmado: 0, total_proyectado: 0 };
+  const cargar = async () => {
+    setLoading(true);
+    try {
+      const [rConfig, rIngresos] = await Promise.all([
+        authFetch("/ingresos/config", user.token),
+        authFetch(`/ingresos?mes=${mes}&anio=${anio}`, user.token),
+      ]);
+      const cfg = rConfig.ok ? await rConfig.json() : null;
+      const ing = rIngresos.ok ? await rIngresos.json() : { ingresos: [], total_confirmado: 0, total_proyectado: 0 };
 
-    setConfig(cfg);
-    if (cfg && cfg.dia_pago === 0) {
-    setShowModalDiaPago(true);
-}
+      setConfig(cfg);
       setIngresos(ing.ingresos ?? []);
       setResumen({ total_confirmado: ing.total_confirmado, total_proyectado: ing.total_proyectado });
+
+      if (cfg && cfg.dia_pago === 0) {
+        setShowModalDiaPago(true);
+      }
+
+      const esMessActual = (mes === hoy.getMonth() + 1 && anio === hoy.getFullYear());
+      const configCreadoEsteMes = cfg?.created_at &&
+        new Date(cfg.created_at).getMonth() === hoy.getMonth() &&
+        new Date(cfg.created_at).getFullYear() === hoy.getFullYear();
+
+      if (
+        cfg?.tipo === "variable" &&
+        cfg.dia_pago > 0 &&
+        diaHoy >= cfg.dia_pago &&
+        esMessActual &&
+        !configCreadoEsteMes
+      ) {
+        const tieneIngreso = (ing.ingresos ?? []).filter(i => i.tipo === "variable").length > 0;
+        if (!tieneIngreso) {
+          setShowModalIngresoObligatorio(true);
+        }
+      }
 
       const promesas = [];
       for (let i = 5; i >= 0; i--) {
@@ -80,7 +103,7 @@ const cargar = async () => {
           authFetch(`/ingresos?mes=${d.getMonth() + 1}&anio=${d.getFullYear()}`, user.token)
             .then(r => r.ok ? r.json() : { total_confirmado: 0 })
             .then(data => ({
-              mes: MESES[d.getMonth()].slice(0, 3),
+              mes:   MESES[d.getMonth()].slice(0, 3),
               total: parseFloat(data.total_confirmado ?? 0),
             }))
         );
@@ -109,21 +132,35 @@ const cargar = async () => {
     setAnio(d.getFullYear());
   };
 
-  const mesActual      = mes === hoy.getMonth() + 1 && anio === hoy.getFullYear();
-  const sinIngresosVar = (config?.tipo === "variable" || config?.tipo === "mixto")
-    && mesActual && ingresos.filter(i => i.tipo === "variable").length === 0;
+  const mesActual = mes === hoy.getMonth() + 1 && anio === hoy.getFullYear();
+
+  const configCreadoEsteMes = config?.created_at &&
+    new Date(config.created_at).getMonth() === hoy.getMonth() &&
+    new Date(config.created_at).getFullYear() === hoy.getFullYear();
+
+  const sinIngresosVar = config?.tipo === "variable"
+    && mesActual
+    && config.dia_pago > 0
+    && diaHoy >= config.dia_pago
+    && !configCreadoEsteMes
+    && ingresos.filter(i => i.tipo === "variable").length === 0;
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
 
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Ingresos</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Gestiona y visualiza tus ingresos mensuales</p>
+          <h1 className="text-2xl font-bold text-gray-900">Ingreso Salarial</h1>
+          <p className="text-sm text-gray-400 mt-0.5">Gestiona y visualiza tus ingresos mensuales fijo o si es variable</p>
         </div>
         <div className="flex gap-2">
-        <button onClick={() => config && setShowModalConfig(true)}
-  disabled={loading || !config}
+          <button onClick={() => navigate("/ingresos/historial")}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition-all">
+            <History size={16} /> Historial salarial
+          </button>
+          <button onClick={() => config && setShowModalConfig(true)}
+            disabled={loading || !config}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition-all">
             <Settings size={16} /> Configurar
           </button>
@@ -134,6 +171,7 @@ const cargar = async () => {
         </div>
       </div>
 
+      {/* Navegación mes */}
       <div className="flex items-center gap-4">
         <button onClick={() => navMes(-1)} className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-all">
           <ChevronLeft size={18} />
@@ -148,20 +186,22 @@ const cargar = async () => {
         </button>
       </div>
 
+      {/* Alerta variable */}
       {sinIngresosVar && (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 flex items-center gap-4">
           <AlertCircle size={22} className="text-amber-500 shrink-0" />
           <div className="flex-1">
-            <p className="text-sm font-bold text-amber-700">¿Cuánto ganaste este mes?</p>
-            <p className="text-xs text-amber-500 mt-0.5">Registra tu ingreso de {MESES[mes - 1]} para llevar un control preciso.</p>
+            <p className="text-sm font-bold text-amber-700">Es día {config.dia_pago} — ¿Cuánto ganaste en {MESES[mes - 1]}?</p>
+            <p className="text-xs text-amber-500 mt-0.5">Tu ingreso base es {fmt(config.monto_base, user.currency)}. Puedes mantenerlo o cambiarlo.</p>
           </div>
-          <button onClick={() => setShowModalIngreso(true)}
+          <button onClick={() => setShowModalIngresoObligatorio(true)}
             className="px-4 py-2 bg-amber-500 text-white text-sm font-bold rounded-xl hover:bg-amber-600 transition-all">
             Registrar
           </button>
         </div>
       )}
 
+      {/* Tarjetas resumen */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Total confirmado</p>
@@ -173,38 +213,38 @@ const cargar = async () => {
           <p className="text-2xl font-bold text-gray-900">{fmt(resumen.total_proyectado, user.currency)}</p>
           <p className="text-xs text-blue-400 font-semibold mt-1 flex items-center gap-1"><Calendar size={12} /> Por recibir</p>
         </div>
-    <div className="bg-purple-600 rounded-2xl p-5 shadow-sm">
-  <p className="text-xs font-semibold text-purple-200 uppercase tracking-widest mb-2">Total del mes</p>
-  <p className="text-2xl font-bold text-white">
-    {fmt(parseFloat(resumen.total_confirmado) + parseFloat(resumen.total_proyectado), user.currency)}
-  </p>
-  <div className="flex items-center gap-3 mt-2">
-    {config ? (
-      <>
-        <span className="text-xs text-purple-200 font-semibold flex items-center gap-1">
-          <TrendingUp size={12} />
-          {config.tipo === "fijo"     && "Fijo"}
-          {config.tipo === "variable" && "Variable"}
-          {config.tipo === "mixto"    && "Mixto"}
-        </span>
-        {config.monto_base && (
-  <span className="text-xs bg-purple-500 text-purple-100 px-2 py-0.5 rounded-full font-semibold">
-    Base: {fmt(config.monto_base, user.currency)}
-  </span>
-)}
-{config.dia_pago > 0 && (
-  <span className="text-xs bg-purple-500 text-purple-100 px-2 py-0.5 rounded-full font-semibold">
-    Día {config.dia_pago} de cada mes
-  </span>
-)}
-      </>
-    ) : (
-      <span className="text-xs text-purple-300">Sin configurar</span>
-    )}
-  </div>
-</div>
+        <div className="bg-purple-600 rounded-2xl p-5 shadow-sm">
+          <p className="text-xs font-semibold text-purple-200 uppercase tracking-widest mb-2">Total del mes</p>
+          <p className="text-2xl font-bold text-white">
+            {fmt(parseFloat(resumen.total_confirmado) + parseFloat(resumen.total_proyectado), user.currency)}
+          </p>
+          <div className="flex items-center gap-3 mt-2">
+            {config ? (
+              <>
+                <span className="text-xs text-purple-200 font-semibold flex items-center gap-1">
+                  <TrendingUp size={12} />
+                  {config.tipo === "fijo"     && "Fijo"}
+                  {config.tipo === "variable" && "Variable"}
+                </span>
+                {config.monto_base && (
+                  <span className="text-xs bg-purple-500 text-purple-100 px-2 py-0.5 rounded-full font-semibold">
+                    Base: {fmt(config.monto_base, user.currency)}
+                  </span>
+                )}
+                {config.dia_pago > 0 && (
+                  <span className="text-xs bg-purple-500 text-purple-100 px-2 py-0.5 rounded-full font-semibold">
+                    Día {config.dia_pago} de cada mes
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="text-xs text-purple-300">Sin configurar</span>
+            )}
+          </div>
+        </div>
       </div>
 
+      {/* Gráfico */}
       <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
         <p className="text-sm font-bold text-gray-700 mb-5">Ingresos confirmados — últimos 6 meses</p>
         <ResponsiveContainer width="100%" height={200}>
@@ -226,6 +266,39 @@ const cargar = async () => {
         </ResponsiveContainer>
       </div>
 
+      {/* Próximo cobro */}
+      {config && config.dia_pago > 0 && mesActual && (() => {
+        const hoyDia  = hoy.getDate();
+        const diaP    = config.dia_pago;
+        const proximaFecha = diaP > hoyDia
+          ? new Date(anio, mes - 1, diaP)
+          : new Date(anio, mes, diaP);
+        const label = proximaFecha.toLocaleDateString("es-PE", {
+          day: "numeric", month: "long", year: "numeric"
+        });
+        return (
+          <div className="bg-white rounded-2xl border border-gray-100 px-6 py-4 shadow-sm flex items-center gap-4">
+            <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center shrink-0">
+              <Calendar size={18} className="text-purple-600" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-0.5">Próximo cobro</p>
+              <p className="text-sm font-bold text-gray-800">{label}</p>
+            </div>
+            {config.monto_base && (
+              <p className="text-base font-bold text-purple-600">{fmt(config.monto_base, user.currency)}</p>
+            )}
+            {config.tipo === "variable" && (
+              <span className="text-xs bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded-full">Variable</span>
+            )}
+            {config.tipo === "fijo" && (
+              <span className="text-xs bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded-full">Fijo</span>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* Lista ingresos */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
           <p className="text-sm font-bold text-gray-700">Ingresos de {MESES[mes - 1]}</p>
@@ -263,14 +336,14 @@ const cargar = async () => {
                     )}
                   </div>
                   <p className="text-xs text-gray-400">
-                  {(() => {
-  if (!ing.fecha) return "Sin fecha";
-  const partes = ing.fecha.split("T")[0].split("-");
-  if (partes.length < 3) return "Sin fecha";
-  const [y, m, d] = partes;
-  return new Date(Number(y), Number(m) - 1, Number(d))
-    .toLocaleDateString("es-PE", { day: "numeric", month: "long", year: "numeric" });
-})()}
+                    {(() => {
+                      if (!ing.fecha) return "Sin fecha";
+                      const partes = ing.fecha.split("T")[0].split("-");
+                      if (partes.length < 3) return "Sin fecha";
+                      const [y, m, d] = partes;
+                      return new Date(Number(y), Number(m) - 1, Number(d))
+                        .toLocaleDateString("es-PE", { day: "numeric", month: "long", year: "numeric" });
+                    })()}
                   </p>
                 </div>
                 <p className={`text-base font-bold shrink-0 ${ing.confirmado ? "text-gray-900" : "text-gray-400"}`}>
@@ -296,19 +369,26 @@ const cargar = async () => {
         )}
       </div>
 
-  {showModalIngreso && (
-    <ModalIngreso user={user} config={config} onClose={() => setShowModalIngreso(false)} onSaved={cargar} />
-)}
-{showModalConfig && (
-    <ModalConfig user={user} config={config} onClose={() => setShowModalConfig(false)} onSaved={cargar} />
-)}
-{showModalDiaPago && (
-    <ModalDiaPago
-        user={user}
-        config={config}
-        onSaved={() => { setShowModalDiaPago(false); cargar(); }}
-    />
-)}
+      {/* Modales */}
+      {showModalIngreso && (
+        <ModalIngreso user={user} config={config} onClose={() => setShowModalIngreso(false)} onSaved={cargar} />
+      )}
+      {showModalConfig && (
+        <ModalConfig user={user} config={config} onClose={() => setShowModalConfig(false)} onSaved={cargar} />
+      )}
+      {showModalDiaPago && (
+        <ModalDiaPago user={user} config={config} onSaved={() => { setShowModalDiaPago(false); cargar(); }} />
+      )}
+      {showModalIngresoObligatorio && (
+        <ModalIngreso
+          user={user}
+          config={config}
+          obligatorio={true}
+          mesNombre={MESES[mes - 1]}
+          onClose={null}
+          onSaved={() => { setShowModalIngresoObligatorio(false); cargar(); }}
+        />
+      )}
     </div>
   );
 }

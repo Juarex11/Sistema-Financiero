@@ -1,18 +1,9 @@
 import { useState } from "react";
 import logo from "../assets/logo.png";
 import {
-  Home,
-  TrendingUp,
-  TrendingDown,
-  BarChart3,
-  Wallet,
-  Users,
-  User,
-  Settings,
-  MessageCircle,
-  Megaphone,
-  Award,
-  Calendar,
+  Home, TrendingUp, TrendingDown, BarChart3,
+  Wallet, Users, Settings, MessageCircle,
+  Megaphone, Award, Calendar, ArrowDownCircle, Receipt,
 } from "lucide-react";
 
 const navItems = [
@@ -22,15 +13,17 @@ const navItems = [
       { label: "Dashboard", path: "/dashboard", Icon: Home },
     ],
   },
-  {
-    section: "FINANZAS",
-    items: [
-      { label: "Ingresos",     path: "/ingresos",     Icon: TrendingUp },
-      { label: "Egresos",      path: "/egresos",      Icon: TrendingDown },
-      { label: "Reportes",     path: "/reportes",     Icon: BarChart3 },
-      { label: "Presupuestos", path: "/presupuestos", Icon: Wallet },
-    ],
-  },
+{
+  section: "FINANZAS",
+  items: [
+    { label: "Ingreso Salarial", path: "/ingresos",      Icon: TrendingUp      },
+    { label: "Mis Entradas",     path: "/mis-entradas",  Icon: ArrowDownCircle },
+    { label: "Egreso Gastos",    path: "/gastos",        Icon: Receipt         },
+    { label: "Egresos",          path: "/egresos",        Icon: TrendingDown    },
+    { label: "Reportes",         path: "/reportes",       Icon: BarChart3       },
+    { label: "Presupuestos",     path: "/presupuestos",   Icon: Wallet          },
+  ],
+},
   {
     section: "AGENDA",
     items: [
@@ -47,8 +40,9 @@ const navItems = [
   {
     section: "CONFIGURACIÓN",
     items: [
-      { label: "Usuarios",  path: "/usuarios", Icon: Users,   adminOnly: true },
-      { label: "Ajustes",   path: "/ajustes",  Icon: Settings },
+      { label: "Usuarios", path: "/usuarios", Icon: Users,       adminOnly: true },
+    { label: "Soporte",  path: "/soporte",  Icon: MessageCircle },
+    { label: "Ajustes",  path: "/ajustes",  Icon: Settings },
     ],
   },
 ];
