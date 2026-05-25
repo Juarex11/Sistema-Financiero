@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { authFetch } from "../../router/authFetch";
 import {
   Plus, Settings, Trash2, RefreshCw, Receipt,
-  Tag, Calendar, Image,
-  X, AlertCircle, Wallet, Clock, Check, Power,
+  Tag, Calendar, Image, X, AlertCircle, Wallet,
+  Clock, Power,
 } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
@@ -14,9 +14,28 @@ function fmt(monto, moneda = "PEN") {
   return new Intl.NumberFormat("es-PE", { style: "currency", currency: moneda }).format(monto);
 }
 
-const COLORES = ["#ef4444","#f59e0b","#10b981","#3b82f6","#9333ea","#ec4899","#6366f1","#14b8a6"];
+const COLORES = [
+  "#ef4444","#f59e0b","#10b981","#3b82f6",
+  "#9333ea","#ec4899","#6366f1","#14b8a6",
+];
 
-// ── Modal Categoría ───────────────────────────────────────────────────────────
+// ─── Estilos compartidos ──────────────────────────────────────────────────────
+const input =
+  "w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm outline-none " +
+  "focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all bg-white";
+
+const labelCls =
+  "block text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5";
+
+const btnBase =
+  "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium " +
+  "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-all";
+
+const btnRed =
+  "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium " +
+  "bg-red-500 text-white hover:bg-red-600 transition-all border-0";
+
+// ─── Modal Categoría ──────────────────────────────────────────────────────────
 function ModalCategoria({ user, categoria, onClose, onSaved }) {
   const [form, setForm] = useState({
     nombre: categoria?.nombre ?? "",
@@ -30,52 +49,78 @@ function ModalCategoria({ user, categoria, onClose, onSaved }) {
     setSaving(true);
     try {
       const method = categoria ? "PUT" : "POST";
-      const url    = categoria
+      const url = categoria
         ? `${API}/gastos/categorias/${categoria.id}`
         : `${API}/gastos/categorias`;
       const res = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json", Accept: "application/json", Authorization: `Bearer ${user.token}` },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${user.token}`,
+        },
         body: JSON.stringify(form),
       });
       if (!res.ok) { setError("Error al guardar."); return; }
       onSaved(); onClose();
     } catch { setError("No se pudo conectar."); }
-    finally { setSaving(false); }
+    finally   { setSaving(false); }
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-      onMouseDown={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h3 className="font-bold text-gray-800">{categoria ? "Editar" : "Nueva"} categoría</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+      onMouseDown={e => e.target === e.currentTarget && onClose()}
+    >
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-sm border border-gray-100">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <p className="text-sm font-semibold text-gray-800">
+            {categoria ? "Editar" : "Nueva"} categoría
+          </p>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <X size={18} />
+          </button>
         </div>
-        <div className="p-6 space-y-4">
+
+        {/* Body */}
+        <div className="p-5 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Nombre</label>
-            <input type="text" placeholder="Ej: Vivienda, Transporte"
-              value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100"
+            <label className={labelCls}>Nombre</label>
+            <input
+              type="text"
+              placeholder="Ej: Vivienda, Transporte"
+              value={form.nombre}
+              onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
+              className={input}
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Color</label>
+            <label className={labelCls}>Color</label>
             <div className="flex gap-2 flex-wrap">
               {COLORES.map(c => (
-                <button key={c} onClick={() => setForm(f => ({ ...f, color: c }))}
-                  className={`w-8 h-8 rounded-full transition-all ${form.color === c ? "ring-2 ring-offset-2 ring-gray-400 scale-110" : ""}`}
-                  style={{ backgroundColor: c }} />
+                <button
+                  key={c}
+                  onClick={() => setForm(f => ({ ...f, color: c }))}
+                  className={`w-7 h-7 rounded-full transition-all ${
+                    form.color === c ? "ring-2 ring-offset-2 ring-gray-400 scale-110" : "opacity-70 hover:opacity-100"
+                  }`}
+                  style={{ backgroundColor: c }}
+                />
               ))}
             </div>
           </div>
-          {error && <p className="text-red-500 text-sm flex items-center gap-2"><AlertCircle size={16} />{error}</p>}
+          {error && (
+            <p className="text-red-500 text-xs flex items-center gap-1.5">
+              <AlertCircle size={14} />{error}
+            </p>
+          )}
         </div>
-        <div className="flex gap-3 px-6 pb-6">
-          <button onClick={onClose} className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-500 text-sm font-semibold hover:bg-gray-50">Cancelar</button>
-          <button onClick={handleSave} disabled={saving}
-            className="flex-1 py-3 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 disabled:opacity-50 transition-all">
+
+        {/* Footer */}
+        <div className="flex gap-2.5 px-5 pb-5">
+          <button onClick={onClose} className={`${btnBase} flex-1 justify-center`}>Cancelar</button>
+          <button onClick={handleSave} disabled={saving} className={`${btnRed} flex-1 justify-center disabled:opacity-50`}>
             {saving ? "Guardando…" : "Guardar"}
           </button>
         </div>
@@ -85,7 +130,7 @@ function ModalCategoria({ user, categoria, onClose, onSaved }) {
   );
 }
 
-// ── Modal Gasto ───────────────────────────────────────────────────────────────
+// ─── Modal Gasto ──────────────────────────────────────────────────────────────
 function ModalGasto({ user, gasto, categorias, onClose, onSaved }) {
   const [form, setForm] = useState({
     nombre:        gasto?.nombre        ?? "",
@@ -117,7 +162,7 @@ function ModalGasto({ user, gasto, categorias, onClose, onSaved }) {
       Object.entries(form).forEach(([k, v]) => { if (v !== "") fd.append(k, v); });
       fd.append("inicio_desde", inicio_desde);
       if (imagen) fd.append("imagen", imagen);
-      if (gasto) fd.append("_method", "PUT");
+      if (gasto)  fd.append("_method", "PUT");
 
       const url = gasto ? `${API}/gastos/${gasto.id}` : `${API}/gastos`;
       const res = await fetch(url, {
@@ -128,110 +173,128 @@ function ModalGasto({ user, gasto, categorias, onClose, onSaved }) {
       if (!res.ok) { const d = await res.json(); setError(d.message || "Error."); return; }
       onSaved(); onClose();
     } catch { setError("No se pudo conectar."); }
-    finally { setSaving(false); }
+    finally   { setSaving(false); }
   };
 
   const diaHoy = new Date().getDate();
   const diaNum = parseInt(form.dia_pago);
-  const infoFecha = form.dia_pago
+
+  const infoFecha = form.dia_pago && !isNaN(diaNum)
     ? diaNum < diaHoy
-      ? "⏭ Aplica desde el próximo mes"
+      ? { texto: "Aplica desde el próximo mes", tipo: "next" }
       : diaNum === diaHoy
-      ? "✅ Aplica hoy"
-      : `📅 Aplica el día ${diaNum} de este mes`
+      ? { texto: "Se aplicará hoy al guardar", tipo: "today" }
+      : { texto: `Aplica el día ${diaNum} de este mes`, tipo: "future" }
     : null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-      onMouseDown={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+      onMouseDown={e => e.target === e.currentTarget && onClose()}
+    >
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-gray-100">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
           <div>
-            <h3 className="font-bold text-gray-800">{gasto ? "Editar" : "Configurar"} gasto</h3>
-            <p className="text-xs text-gray-400 mt-0.5">Completa todos los campos requeridos</p>
+            <p className="text-sm font-semibold text-gray-800">
+              {gasto ? "Editar" : "Configurar"} gasto
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">Completa los campos requeridos</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <X size={18} />
+          </button>
         </div>
 
-        <div className="p-6">
+        {/* Body */}
+        <div className="p-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             {/* Columna izquierda */}
-            <div className="space-y-4">
+            <div className="space-y-3.5">
               <div>
-                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">
-                  Nombre <span className="text-red-400">*</span>
-                </label>
+                <label className={labelCls}>Nombre <span className="text-red-400">*</span></label>
                 <input type="text" placeholder="Ej: Alquiler"
-                  value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                  value={form.nombre}
+                  onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
+                  className={input}
                 />
               </div>
-
               <div>
-                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Descripción</label>
+                <label className={labelCls}>Descripción</label>
                 <input type="text" placeholder="Ej: Departamento piso 3"
-                  value={form.descripcion} onChange={e => setForm(f => ({ ...f, descripcion: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                  value={form.descripcion}
+                  onChange={e => setForm(f => ({ ...f, descripcion: e.target.value }))}
+                  className={input}
                 />
               </div>
-
               <div>
-                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">
-                  Monto <span className="text-red-400">*</span>
-                </label>
+                <label className={labelCls}>Monto <span className="text-red-400">*</span></label>
                 <input type="number" min="0" placeholder="0.00"
-                  value={form.monto} onChange={e => setForm(f => ({ ...f, monto: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                  value={form.monto}
+                  onChange={e => setForm(f => ({ ...f, monto: e.target.value }))}
+                  className={input}
                 />
               </div>
-
               <div>
-                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">
-                  Día de pago <span className="text-red-400">*</span>
-                </label>
+                <label className={labelCls}>Día de pago <span className="text-red-400">*</span></label>
                 <input type="number" min="1" max="31" placeholder="1 — 31"
-                  value={form.dia_pago} onChange={e => setForm(f => ({ ...f, dia_pago: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                  value={form.dia_pago}
+                  onChange={e => setForm(f => ({ ...f, dia_pago: e.target.value }))}
+                  className={input}
                 />
                 {infoFecha && (
-                  <p className="text-xs mt-1.5 text-gray-400">{infoFecha}</p>
+                  <p className={`text-xs mt-1.5 flex items-center gap-1 font-medium ${
+                    infoFecha.tipo === "today"
+                      ? "text-green-600"
+                      : infoFecha.tipo === "next"
+                      ? "text-amber-500"
+                      : "text-gray-400"
+                  }`}>
+                    {infoFecha.tipo === "today" && <span>✓</span>}
+                    {infoFecha.texto}
+                  </p>
                 )}
               </div>
-
               <div>
-                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Hora (opcional)</label>
+                <label className={labelCls}>Hora (opcional)</label>
                 <input type="time" value={form.hora_pago}
                   onChange={e => setForm(f => ({ ...f, hora_pago: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                  className={input}
                 />
               </div>
             </div>
 
             {/* Columna derecha */}
-            <div className="space-y-4">
+            <div className="space-y-3.5">
               <div>
-                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Tipo de registro</label>
+                <label className={labelCls}>Tipo de registro</label>
                 <div className="space-y-2">
                   {[
                     { value: "manual",     label: "Manual",     sub: "Tú confirmas cuando pagas" },
-                    { value: "automatico", label: "Automático", sub: "Se descuenta solo al llegar el día" },
+                    { value: "automatico", label: "Automático", sub: "Se descuenta solo al vencer" },
                   ].map(op => (
-                    <button key={op.value} type="button"
+                    <button
+                      key={op.value}
+                      type="button"
                       onClick={() => setForm(f => ({ ...f, tipo_registro: op.value }))}
-                      className={`w-full flex items-center gap-3 py-3 px-4 border text-left rounded-xl transition-all ${
+                      className={`w-full flex items-center gap-3 py-2.5 px-3.5 border text-left rounded-lg transition-all ${
                         form.tipo_registro === op.value
                           ? "border-red-400 bg-red-50"
-                          : "border-gray-200 bg-white hover:border-red-200"
-                      }`}>
-                      <div className={`w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center ${
+                          : "border-gray-200 bg-white hover:border-gray-300"
+                      }`}
+                    >
+                      <div className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 flex items-center justify-center ${
                         form.tipo_registro === op.value ? "border-red-500 bg-red-500" : "border-gray-300"
                       }`}>
-                        {form.tipo_registro === op.value && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        {form.tipo_registro === op.value && (
+                          <div className="w-1 h-1 rounded-full bg-white" />
+                        )}
                       </div>
                       <div>
-                        <p className={`text-sm font-semibold ${form.tipo_registro === op.value ? "text-red-600" : "text-gray-700"}`}>{op.label}</p>
+                        <p className={`text-sm font-medium ${
+                          form.tipo_registro === op.value ? "text-red-600" : "text-gray-700"
+                        }`}>{op.label}</p>
                         <p className="text-xs text-gray-400">{op.sub}</p>
                       </div>
                     </button>
@@ -240,10 +303,12 @@ function ModalGasto({ user, gasto, categorias, onClose, onSaved }) {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Categoría</label>
-                <select value={form.categoria_id}
+                <label className={labelCls}>Categoría</label>
+                <select
+                  value={form.categoria_id}
                   onChange={e => setForm(f => ({ ...f, categoria_id: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-red-400 bg-white">
+                  className={input}
+                >
                   <option value="">Sin categoría</option>
                   {categorias.map(c => (
                     <option key={c.id} value={c.id}>{c.nombre}</option>
@@ -252,18 +317,24 @@ function ModalGasto({ user, gasto, categorias, onClose, onSaved }) {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Imagen (opcional)</label>
+                <label className={labelCls}>Imagen (opcional)</label>
                 {preview ? (
                   <div className="relative">
-                    <img src={preview} alt="preview" className="w-full h-36 object-cover rounded-xl border border-gray-200" />
-                    <button onClick={() => { setImagen(null); setPreview(null); }}
-                      className="absolute top-2 right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-md text-red-500 hover:bg-red-50">
-                      <X size={14} />
+                    <img
+                      src={preview}
+                      alt="preview"
+                      className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                    />
+                    <button
+                      onClick={() => { setImagen(null); setPreview(null); }}
+                      className="absolute top-2 right-2 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow text-red-500 hover:bg-red-50 transition-all"
+                    >
+                      <X size={12} />
                     </button>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center gap-2 border border-dashed border-gray-200 rounded-xl px-4 py-6 cursor-pointer hover:border-red-300 hover:bg-red-50 transition-all">
-                    <Image size={22} className="text-gray-300" />
+                  <label className="flex flex-col items-center gap-1.5 border border-dashed border-gray-200 rounded-lg px-4 py-5 cursor-pointer hover:border-red-300 hover:bg-red-50 transition-all">
+                    <Image size={20} className="text-gray-300" />
                     <span className="text-xs text-gray-400">Clic para seleccionar</span>
                     <input type="file" accept="image/*" className="hidden" onChange={e => {
                       const file = e.target.files[0];
@@ -276,19 +347,16 @@ function ModalGasto({ user, gasto, categorias, onClose, onSaved }) {
           </div>
 
           {error && (
-            <p className="text-red-500 text-sm flex items-center gap-2 mt-4">
-              <AlertCircle size={16} />{error}
+            <p className="text-red-500 text-xs flex items-center gap-1.5 mt-4">
+              <AlertCircle size={14} />{error}
             </p>
           )}
         </div>
 
-        <div className="flex gap-3 px-6 pb-6">
-          <button onClick={onClose}
-            className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-500 text-sm font-semibold hover:bg-gray-50">
-            Cancelar
-          </button>
-          <button onClick={handleSave} disabled={saving}
-            className="flex-1 py-3 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 disabled:opacity-50 transition-all">
+        {/* Footer */}
+        <div className="flex gap-2.5 px-5 pb-5">
+          <button onClick={onClose} className={`${btnBase} flex-1 justify-center`}>Cancelar</button>
+          <button onClick={handleSave} disabled={saving} className={`${btnRed} flex-1 justify-center disabled:opacity-50`}>
             {saving ? "Guardando…" : gasto ? "Guardar cambios" : "Guardar gasto"}
           </button>
         </div>
@@ -297,7 +365,8 @@ function ModalGasto({ user, gasto, categorias, onClose, onSaved }) {
     document.body
   );
 }
-// ── Modal Confirmar Pago ──────────────────────────────────────────────────────
+
+// ─── Modal Confirmar Pago ─────────────────────────────────────────────────────
 function ModalConfirmarPago({ user, movimiento, onClose, onSaved }) {
   const [saving, setSaving] = useState(false);
 
@@ -320,21 +389,20 @@ function ModalConfirmarPago({ user, movimiento, onClose, onSaved }) {
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
-        <div className="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Receipt size={24} className="text-red-500" />
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 text-center border border-gray-100">
+        <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center mx-auto mb-4 border border-red-100">
+          <Receipt size={20} className="text-red-500" />
         </div>
-        <h3 className="font-bold text-gray-800 mb-1">¿Pagaste este gasto?</h3>
-        <p className="text-sm text-gray-500 mb-1 font-semibold">{movimiento.gasto?.nombre}</p>
-        <p className="text-2xl font-bold text-red-500 mb-6">{fmt(movimiento.monto, movimiento.moneda)}</p>
-        <div className="flex gap-3">
-          <button onClick={eliminar} disabled={saving}
-            className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-500 text-sm font-semibold hover:bg-gray-50">
+        <p className="text-sm font-semibold text-gray-800 mb-0.5">¿Pagaste este gasto?</p>
+        <p className="text-xs text-gray-500 mb-1">{movimiento.gasto?.nombre}</p>
+        <p className="text-2xl font-semibold text-red-500 mb-5">
+{fmt(movimiento.monto, user.currency)}        </p>
+        <div className="flex gap-2.5">
+          <button onClick={eliminar} disabled={saving} className={`${btnBase} flex-1 justify-center`}>
             No pagué
           </button>
-          <button onClick={confirmar} disabled={saving}
-            className="flex-1 py-3 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 disabled:opacity-50 transition-all">
+          <button onClick={confirmar} disabled={saving} className={`${btnRed} flex-1 justify-center disabled:opacity-50`}>
             {saving ? "…" : "Sí, pagué"}
           </button>
         </div>
@@ -344,7 +412,29 @@ function ModalConfirmarPago({ user, movimiento, onClose, onSaved }) {
   );
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
+// ─── Modal Confirmar Eliminación ──────────────────────────────────────────────
+function ModalEliminar({ gasto, onClose, onConfirm }) {
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 text-center border border-gray-100">
+        <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center mx-auto mb-4 border border-red-100">
+          <Trash2 size={20} className="text-red-500" />
+        </div>
+        <p className="text-sm font-semibold text-gray-800 mb-1">¿Eliminar gasto?</p>
+        <p className="text-xs text-gray-500 mb-5">
+          Se eliminará <strong>{gasto.nombre}</strong>. El historial no se verá afectado.
+        </p>
+        <div className="flex gap-2.5">
+          <button onClick={onClose} className={`${btnBase} flex-1 justify-center`}>Cancelar</button>
+          <button onClick={onConfirm} className={`${btnRed} flex-1 justify-center`}>Eliminar</button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
 export default function GastosPage({ user }) {
   const navigate = useNavigate();
   const [gastos,      setGastos]      = useState([]);
@@ -354,10 +444,11 @@ export default function GastosPage({ user }) {
   const [loading,     setLoading]     = useState(true);
   const [vista,       setVista]       = useState("gastos");
 
-  const [modalGasto,     setModalGasto]     = useState(null);
-  const [modalCategoria, setModalCategoria] = useState(null);
-  const [confirmDelete,  setConfirmDelete]  = useState(null);
-  const [modalPago,      setModalPago]      = useState(null);
+  const [modalGasto,      setModalGasto]      = useState(null);
+  const [modalCategoria,  setModalCategoria]  = useState(null);
+  const [confirmDelete,   setConfirmDelete]   = useState(null);
+  const [modalPago,       setModalPago]       = useState(null);
+  const [filtroCategoria, setFiltroCategoria] = useState(null);
 
   const cargar = async () => {
     setLoading(true);
@@ -395,56 +486,74 @@ export default function GastosPage({ user }) {
   };
 
   const noConfigurados = gastos.filter(g => !g.configurado);
-  const configurados   = gastos.filter(g => g.configurado);
+  const configurados   = gastos
+    .filter(g => g.configurado)
+    .filter(g => {
+      if (filtroCategoria === null) return true;
+      if (filtroCategoria === "sin_categoria") return !g.categoria_id;
+      return g.categoria_id === filtroCategoria;
+    });
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
+    <div className="p-6 max-w-4xl mx-auto space-y-5">
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* ── Header ── */}
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Egreso Gastos</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Gastos fijos mensuales que se descuentan de tu billetera</p>
+          <h1 className="text-xl font-semibold text-gray-900">Gastos fijos</h1>
+          <p className="text-sm text-gray-400 mt-0.5">
+            Egresos mensuales descontados de tu billetera
+          </p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => navigate("/gastos/historial")}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition-all">
-            <Calendar size={16} /> Historial
+          <button onClick={() => navigate("/gastos/historial")} className={btnBase}>
+            <Calendar size={15} /> Historial
           </button>
-          <button onClick={() => setModalGasto("nuevo")}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition-all">
-            <Plus size={16} /> Nuevo gasto
+          <button onClick={() => setModalGasto("nuevo")} className={btnRed}>
+            <Plus size={15} /> Nuevo gasto
           </button>
         </div>
       </div>
 
-      {/* Billetera */}
+      {/* ── Billetera ── */}
       {billetera && (
-        <div className="bg-gradient-to-r from-gray-800 to-gray-900 rounded-2xl p-5 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center shrink-0">
-            <Wallet size={22} className="text-white" />
+        <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-10 h-10 bg-white border border-gray-200 rounded-lg flex items-center justify-center shrink-0">
+            <Wallet size={18} className="text-gray-500" />
           </div>
           <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-0.5">Saldo disponible</p>
-            <p className="text-3xl font-bold text-white">{fmt(billetera.saldo, billetera.moneda)}</p>
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">
+              Saldo disponible
+            </p>
+            <p className="text-2xl font-semibold text-gray-900 leading-tight">
+{fmt(billetera.saldo, user.currency)}
+            </p>
           </div>
         </div>
       )}
 
-      {/* Alertas pendientes */}
+      {/* ── Alertas pendientes ── */}
       {pendientes.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Gastos por confirmar este mes</p>
+          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">
+            Por confirmar este mes
+          </p>
           {pendientes.map(mov => (
-            <div key={mov.id}
-              className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 flex items-center gap-4">
-              <AlertCircle size={20} className="text-amber-500 shrink-0" />
+            <div
+              key={mov.id}
+              className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-3"
+            >
+              <AlertCircle size={16} className="text-amber-500 shrink-0" />
               <div className="flex-1">
-                <p className="text-sm font-bold text-amber-700">{mov.gasto?.nombre}</p>
-                <p className="text-xs text-amber-500">{fmt(mov.monto, mov.moneda)} · ¿Ya pagaste?</p>
+                <p className="text-sm font-medium text-amber-700">{mov.gasto?.nombre}</p>
+                <p className="text-xs text-amber-500">
+                  {fmt(mov.monto, mov.moneda)} · ¿Ya pagaste?
+                </p>
               </div>
-              <button onClick={() => setModalPago(mov)}
-                className="px-4 py-2 bg-amber-500 text-white text-sm font-bold rounded-xl hover:bg-amber-600 transition-all">
+              <button
+                onClick={() => setModalPago(mov)}
+                className="px-3 py-1.5 bg-amber-500 text-white text-xs font-medium rounded-lg hover:bg-amber-600 transition-all"
+              >
                 Responder
               </button>
             </div>
@@ -452,48 +561,104 @@ export default function GastosPage({ user }) {
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
+      {/* ── Tabs ── */}
+      <div className="flex gap-0.5 bg-gray-100 rounded-lg p-0.5 w-fit">
         {[
           { key: "gastos",     label: "Mis gastos"  },
           { key: "categorias", label: "Categorías"  },
         ].map(t => (
-          <button key={t.key} onClick={() => setVista(t.key)}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-              vista === t.key ? "bg-white text-red-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
-            }`}>
+          <button
+            key={t.key}
+            onClick={() => { setVista(t.key); setFiltroCategoria(null); }}
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+              vista === t.key
+                ? "bg-white text-red-600 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
             {t.label}
           </button>
         ))}
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-20 text-gray-400">
-          <RefreshCw size={20} className="animate-spin mr-2" /> Cargando…
+      {/* ── Filtro de categorías (solo en vista gastos) ── */}
+      {!loading && vista === "gastos" && categorias.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => setFiltroCategoria(null)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+              filtroCategoria === null
+                ? "bg-gray-800 text-white border-gray-800"
+                : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
+            }`}
+          >
+            Todos
+          </button>
+          {categorias.map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => setFiltroCategoria(filtroCategoria === cat.id ? null : cat.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                filtroCategoria === cat.id
+                  ? "text-white border-transparent"
+                  : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
+              }`}
+              style={filtroCategoria === cat.id ? { backgroundColor: cat.color, borderColor: cat.color } : {}}
+            >
+              <span
+                className="w-2 h-2 rounded-full shrink-0"
+                style={{ backgroundColor: filtroCategoria === cat.id ? "rgba(255,255,255,0.7)" : cat.color }}
+              />
+              {cat.nombre}
+            </button>
+          ))}
+          <button
+            onClick={() => setFiltroCategoria("sin_categoria")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+              filtroCategoria === "sin_categoria"
+                ? "bg-gray-800 text-white border-gray-800"
+                : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
+            }`}
+          >
+            Sin categoría
+          </button>
         </div>
+      )}
+
+      {/* ── Contenido ── */}
+      {loading ? (
+        <div className="flex items-center justify-center py-16 text-gray-400 gap-2">
+          <RefreshCw size={16} className="animate-spin" />
+          <span className="text-sm">Cargando…</span>
+        </div>
+
       ) : vista === "gastos" ? (
         <div className="space-y-4">
 
           {/* Sin configurar */}
           {noConfigurados.length > 0 && (
             <div>
-              <p className="text-xs font-bold text-amber-600 uppercase tracking-widest mb-2 flex items-center gap-1">
-                <Clock size={12} /> Pendientes de configurar ({noConfigurados.length})
+              <p className="text-[11px] font-semibold text-amber-500 uppercase tracking-widest mb-2 flex items-center gap-1">
+                <Clock size={11} /> Sin configurar ({noConfigurados.length})
               </p>
               <div className="space-y-2">
                 {noConfigurados.map(gasto => (
-                  <div key={gasto.id}
-                    className="bg-white border border-amber-200 rounded-2xl px-5 py-4 flex items-center gap-4">
-                    <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
-                      <Receipt size={18} className="text-amber-500" />
+                  <div
+                    key={gasto.id}
+                    className="bg-white border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-3"
+                  >
+                    <div className="w-9 h-9 bg-amber-50 rounded-lg flex items-center justify-center shrink-0">
+                      <Receipt size={16} className="text-amber-400" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-bold text-gray-800">{gasto.nombre}</p>
-                      <p className="text-xs text-amber-500">Falta configurar monto y día de pago</p>
+                      <p className="text-sm font-medium text-gray-800">{gasto.nombre}</p>
+                      <p className="text-xs text-amber-400">Falta monto y día de pago</p>
                     </div>
-                    <button onClick={() => setModalGasto(gasto)}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500 text-white text-xs font-bold hover:bg-amber-600 transition-all">
-                      <Settings size={13} /> Configurar
+                    <button
+                      onClick={() => setModalGasto(gasto)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 text-white text-xs font-medium hover:bg-amber-600 transition-all"
+                    >
+                      <Settings size={12} /> Configurar
                     </button>
                   </div>
                 ))}
@@ -501,82 +666,105 @@ export default function GastosPage({ user }) {
             </div>
           )}
 
-          {/* Configurados */}
-          {configurados.length === 0 && noConfigurados.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-gray-300">
-              <Receipt size={40} strokeWidth={1} className="mb-3" />
-              <p className="text-sm font-medium text-gray-400">No tienes gastos configurados</p>
-              <button onClick={() => setModalGasto("nuevo")}
-                className="mt-4 text-sm text-red-500 font-semibold hover:underline">
-                + Agregar primer gasto
+          {/* Vacío */}
+          {configurados.length === 0 && noConfigurados.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-16 gap-2">
+              <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100">
+                <Receipt size={22} className="text-gray-300" />
+              </div>
+              <p className="text-sm text-gray-400">No tienes gastos configurados</p>
+              <button
+                onClick={() => setModalGasto("nuevo")}
+                className="text-xs text-red-500 font-medium hover:underline mt-1"
+              >
+                Agregar primer gasto
               </button>
             </div>
-          ) : configurados.length > 0 && (
+          )}
+
+          {/* Configurados */}
+          {configurados.length > 0 && (
             <div>
               {noConfigurados.length > 0 && (
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Configurados</p>
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-2">
+                  Configurados
+                </p>
               )}
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {configurados.map(gasto => {
                   const cat = categorias.find(c => c.id === gasto.categoria_id);
                   return (
-                    <div key={gasto.id}
-                      className={`bg-white rounded-2xl border shadow-sm p-5 flex items-center gap-4 transition-all ${
-                        gasto.activo ? "border-gray-100" : "border-gray-100 opacity-60"
-                      }`}>
-                      <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-red-50 flex items-center justify-center border border-gray-100">
-                        {gasto.imagen_url ? (
-                          <img src={gasto.imagen_url} alt={gasto.nombre} className="w-full h-full object-cover" />
-                        ) : (
-                          <Receipt size={22} className="text-red-400" />
-                        )}
+                    <div
+                      key={gasto.id}
+                      className={`bg-white border border-gray-100 rounded-xl px-4 py-3.5 flex items-center gap-3 hover:border-gray-200 transition-all ${
+                        !gasto.activo ? "opacity-50" : ""
+                      }`}
+                    >
+                      {/* Icono / imagen */}
+                      <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-gray-50 flex items-center justify-center border border-gray-100">
+                        {gasto.imagen_url
+                          ? <img src={gasto.imagen_url} alt={gasto.nombre} className="w-full h-full object-cover" />
+                          : <Receipt size={16} className="text-gray-300" />
+                        }
                       </div>
+
+                      {/* Info */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <p className="text-sm font-bold text-gray-800 truncate">{gasto.nombre}</p>
+                        <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                          <span className="text-sm font-medium text-gray-800">{gasto.nombre}</span>
                           {cat && (
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white"
-                              style={{ backgroundColor: cat.color }}>
+                            <span
+                              className="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white"
+                              style={{ backgroundColor: cat.color }}
+                            >
                               {cat.nombre}
                             </span>
                           )}
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                            gasto.tipo_registro === 'automatico'
-                              ? 'bg-purple-100 text-purple-600'
-                              : 'bg-gray-100 text-gray-500'
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                            gasto.tipo_registro === "automatico"
+                              ? "bg-purple-50 text-purple-600"
+                              : "bg-gray-100 text-gray-400"
                           }`}>
-                            {gasto.tipo_registro === 'automatico' ? 'Auto' : 'Manual'}
+                            {gasto.tipo_registro === "automatico" ? "Auto" : "Manual"}
                           </span>
-                          {!gasto.activo && (
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Pausado</span>
-                          )}
                         </div>
                         {gasto.descripcion && (
-                          <p className="text-xs text-gray-400 truncate">{gasto.descripcion}</p>
+                          <p className="text-xs text-gray-400 truncate mb-0.5">{gasto.descripcion}</p>
                         )}
-                        <div className="flex items-center gap-3 mt-1">
-                          <span className="text-xs text-gray-400 flex items-center gap-1">
-                            <Calendar size={11} /> Día {gasto.dia_pago}
-                            {gasto.hora_pago && ` · ${gasto.hora_pago.slice(0,5)}`}
-                          </span>
-                        </div>
+                        <p className="text-xs text-gray-400 flex items-center gap-1">
+                          <Calendar size={11} />
+                          Día {gasto.dia_pago}
+                          {gasto.hora_pago && ` · ${gasto.hora_pago.slice(0, 5)}`}
+                        </p>
                       </div>
-                      <p className="text-lg font-bold text-red-500 shrink-0">
-                        -{fmt(gasto.monto, gasto.moneda)}
-                      </p>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button onClick={() => toggleActivo(gasto)}
-                          className="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-gray-50 transition-all">
-                         <Power size={18} className={gasto.activo ? "text-red-500" : "text-gray-300"} />
 
+                      {/* Monto */}
+                      <p className="text-sm font-semibold text-red-500 shrink-0">
+-{fmt(gasto.monto, user.currency)}
+                      </p>
+
+                      {/* Acciones */}
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        <button
+                          onClick={() => toggleActivo(gasto)}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-all"
+                          title={gasto.activo ? "Pausar" : "Activar"}
+                        >
+                          <Power size={15} className={gasto.activo ? "text-red-500" : "text-gray-300"} />
                         </button>
-                        <button onClick={() => setModalGasto(gasto)}
-                          className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-400 hover:bg-gray-50 hover:text-red-500 transition-all">
-                          <Settings size={16} />
+                        <button
+                          onClick={() => setModalGasto(gasto)}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-300 hover:bg-gray-50 hover:text-gray-500 transition-all"
+                          title="Editar"
+                        >
+                          <Settings size={14} />
                         </button>
-                        <button onClick={() => setConfirmDelete(gasto)}
-                          className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all">
-                          <Trash2 size={15} />
+                        <button
+                          onClick={() => setConfirmDelete(gasto)}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-300 hover:bg-red-50 hover:text-red-400 transition-all"
+                          title="Eliminar"
+                        >
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </div>
@@ -588,38 +776,54 @@ export default function GastosPage({ user }) {
         </div>
 
       ) : (
-        // ── Categorías ────────────────────────────────────────────────────────
+        /* ── Categorías ── */
         <div className="space-y-4">
           <div className="flex justify-end">
-            <button onClick={() => setModalCategoria("nuevo")}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-red-200 text-red-500 text-sm font-semibold hover:bg-red-50 transition-all">
-              <Plus size={16} /> Nueva categoría
+            <button
+              onClick={() => setModalCategoria("nuevo")}
+              className={btnBase}
+            >
+              <Plus size={15} /> Nueva categoría
             </button>
           </div>
+
           {categorias.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-gray-300">
-              <Tag size={40} strokeWidth={1} className="mb-3" />
-              <p className="text-sm font-medium text-gray-400">No hay categorías aún</p>
+            <div className="flex flex-col items-center justify-center py-16 gap-2">
+              <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100">
+                <Tag size={22} className="text-gray-300" />
+              </div>
+              <p className="text-sm text-gray-400">No hay categorías aún</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {categorias.map(cat => (
-                <div key={cat.id} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: cat.color + "20" }}>
-                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: cat.color }} />
+                <div
+                  key={cat.id}
+                  className="bg-white border border-gray-100 rounded-xl p-3.5 flex items-center gap-3 hover:border-gray-200 transition-all"
+                >
+                  <div
+                    className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: cat.color + "18" }}
+                  >
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-bold text-gray-800">{cat.nombre}</p>
-                    <p className="text-xs text-gray-400">{cat.gastos_count ?? 0} gasto{cat.gastos_count !== 1 ? "s" : ""}</p>
+                    <p className="text-sm font-medium text-gray-800">{cat.nombre}</p>
+                    <p className="text-xs text-gray-400">
+                      {cat.gastos_count ?? 0} gasto{cat.gastos_count !== 1 ? "s" : ""}
+                    </p>
                   </div>
-                  <div className="flex gap-1">
-                    <button onClick={() => setModalCategoria(cat)}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-50 hover:text-red-500 transition-all">
+                  <div className="flex gap-0.5">
+                    <button
+                      onClick={() => setModalCategoria(cat)}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-300 hover:bg-gray-50 hover:text-gray-500 transition-all"
+                    >
                       <Settings size={14} />
                     </button>
-                    <button onClick={() => eliminarCategoria(cat.id)}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all">
+                    <button
+                      onClick={() => eliminarCategoria(cat.id)}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-300 hover:bg-red-50 hover:text-red-400 transition-all"
+                    >
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -630,7 +834,7 @@ export default function GastosPage({ user }) {
         </div>
       )}
 
-      {/* Modales */}
+      {/* ── Modales ── */}
       {modalGasto && (
         <ModalGasto
           user={user}
@@ -656,29 +860,12 @@ export default function GastosPage({ user }) {
           onSaved={cargar}
         />
       )}
-      {confirmDelete && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
-            <div className="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Trash2 size={24} className="text-red-500" />
-            </div>
-            <h3 className="font-bold text-gray-800 mb-1">¿Eliminar gasto?</h3>
-            <p className="text-sm text-gray-500 mb-6">
-              Se eliminará <strong>{confirmDelete.nombre}</strong>. El historial no se verá afectado.
-            </p>
-            <div className="flex gap-3">
-              <button onClick={() => setConfirmDelete(null)}
-                className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-500 text-sm font-semibold hover:bg-gray-50">
-                Cancelar
-              </button>
-              <button onClick={() => eliminar(confirmDelete.id)}
-                className="flex-1 py-3 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition-all">
-                Eliminar
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
+      {confirmDelete && (
+        <ModalEliminar
+          gasto={confirmDelete}
+          onClose={() => setConfirmDelete(null)}
+          onConfirm={() => eliminar(confirmDelete.id)}
+        />
       )}
     </div>
   );

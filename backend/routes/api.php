@@ -11,6 +11,7 @@ use App\Http\Controllers\IngresoController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\EntradaController;
 use App\Http\Controllers\GastoController;
+use App\Http\Controllers\BilleteraTransaccionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -51,6 +52,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put   ('/ingresos/{ingreso}',          [IngresoController::class, 'update']);
     Route::delete('/ingresos/{ingreso}',          [IngresoController::class, 'destroy']);
     Route::patch ('/ingresos/{ingreso}/confirmar',[IngresoController::class, 'confirmar']);
+
+    // Categorías de billetera
+Route::get   ('/billetera/categorias',              [BilleteraTransaccionController::class, 'categorias']);
+Route::post  ('/billetera/categorias',              [BilleteraTransaccionController::class, 'storeCategoria']);
+Route::put   ('/billetera/categorias/{categoria}',  [BilleteraTransaccionController::class, 'updateCategoria']);
+Route::delete('/billetera/categorias/{categoria}',  [BilleteraTransaccionController::class, 'destroyCategoria']);
+
+// Transacciones
+Route::get ('/billetera/transacciones', [BilleteraTransaccionController::class, 'index']);
+Route::post('/billetera/transacciones', [BilleteraTransaccionController::class, 'store']);
 
     // Testimonios (usuario)
     Route::get   ('/testimonios/mio', [TestimonioController::class, 'mio']);

@@ -125,8 +125,7 @@ export default function HistorialGastosPage({ user }) {
                         )}
                       </div>
                       <p className="text-sm font-bold text-red-500 text-right">
-                        -{fmt(mov.monto, mov.moneda)}
-                      </p>
+-{fmt(mov.monto, user.currency)}                      </p>
                     </div>
                   );
                 })}

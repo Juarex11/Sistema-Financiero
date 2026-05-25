@@ -141,111 +141,144 @@ function ModalEntrada({ user, entrada, categorias, onClose, onSaved }) {
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
       onMouseDown={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+
+        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
-          <h3 className="font-bold text-gray-800">{entrada ? "Editar" : "Nueva"} entrada fija</h3>
+          <div>
+            <h3 className="font-bold text-gray-800">{entrada ? "Editar" : "Nueva"} entrada fija</h3>
+            <p className="text-xs text-gray-400 mt-0.5">Completa los campos requeridos</p>
+          </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
         </div>
-        <div className="p-6 space-y-4">
 
-          <div>
-            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Nombre</label>
-            <input type="text" placeholder="Ej: Sueldo mensual"
-              value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
-            />
-          </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-          <div>
-            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Descripción (opcional)</label>
-            <input type="text" placeholder="Ej: Empresa ABC"
-              value={form.descripcion} onChange={e => setForm(f => ({ ...f, descripcion: e.target.value }))}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
-            />
-          </div>
+            {/* Columna izquierda */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">
+                  Nombre <span className="text-red-400">*</span>
+                </label>
+                <input type="text" placeholder="Ej: Sueldo mensual"
+                  value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
+                />
+              </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Monto</label>
-              <input type="number" min="0" placeholder="0.00"
-                value={form.monto} onChange={e => setForm(f => ({ ...f, monto: e.target.value }))}
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Día de pago</label>
-              <input type="number" min="1" max="31" placeholder="Ej: 5"
-                value={form.dia_pago} onChange={e => setForm(f => ({ ...f, dia_pago: e.target.value }))}
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
-              />
-            </div>
-          </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Descripción</label>
+                <input type="text" placeholder="Ej: Empresa ABC"
+                  value={form.descripcion} onChange={e => setForm(f => ({ ...f, descripcion: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
+                />
+              </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Hora (opcional)</label>
-            <input type="time"
-              value={form.hora_pago} onChange={e => setForm(f => ({ ...f, hora_pago: e.target.value }))}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
-            />
-          </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">
+                    Monto <span className="text-red-400">*</span>
+                  </label>
+                  <input type="number" min="0" placeholder="0.00"
+                    value={form.monto} onChange={e => setForm(f => ({ ...f, monto: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">
+                    Día de pago <span className="text-red-400">*</span>
+                  </label>
+                  <input type="number" min="1" max="31" placeholder="1 — 31"
+                    value={form.dia_pago} onChange={e => setForm(f => ({ ...f, dia_pago: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
+                  />
+                </div>
+              </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Categoría (opcional)</label>
-            <select value={form.categoria_id} onChange={e => setForm(f => ({ ...f, categoria_id: e.target.value }))}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 bg-white">
-              <option value="">Sin categoría</option>
-              {categorias.map(c => (
-                <option key={c.id} value={c.id}>{c.nombre}</option>
-              ))}
-            </select>
-          </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Hora (opcional)</label>
+                <input type="time"
+                  value={form.hora_pago} onChange={e => setForm(f => ({ ...f, hora_pago: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
+                />
+              </div>
 
-          {!entrada && (
-            <div>
-              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">¿Desde cuándo aplica?</label>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { value: "actual",  label: "Este mes",    sub: "Se registra ahora"             },
-                  { value: "proximo", label: "Próximo mes", sub: "Empieza el mes que viene"       },
-                ].map(op => (
-                  <button key={op.value} type="button" onClick={() => setForm(f => ({ ...f, inicio_desde: op.value }))}
-                    className={`flex flex-col gap-0.5 py-3 px-3 border text-left rounded-xl transition-all ${
-                      form.inicio_desde === op.value
-                        ? "border-purple-500 bg-purple-50"
-                        : "border-gray-200 bg-white hover:border-purple-300"
-                    }`}>
-                    <span className={`text-sm font-semibold ${form.inicio_desde === op.value ? "text-purple-700" : "text-gray-700"}`}>{op.label}</span>
-                    <span className="text-xs text-gray-400">{op.sub}</span>
-                  </button>
-                ))}
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Categoría</label>
+                <select value={form.categoria_id} onChange={e => setForm(f => ({ ...f, categoria_id: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 bg-white">
+                  <option value="">Sin categoría</option>
+                  {categorias.map(c => (
+                    <option key={c.id} value={c.id}>{c.nombre}</option>
+                  ))}
+                </select>
               </div>
             </div>
+
+            {/* Columna derecha */}
+            <div className="space-y-4">
+              {!entrada && (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">¿Desde cuándo aplica?</label>
+                  <div className="space-y-2">
+                    {[
+                      { value: "actual",  label: "Este mes",    sub: "Se registra ahora mismo"      },
+                      { value: "proximo", label: "Próximo mes", sub: "Empieza el mes que viene"      },
+                    ].map(op => (
+                      <button key={op.value} type="button" onClick={() => setForm(f => ({ ...f, inicio_desde: op.value }))}
+                        className={`w-full flex items-center gap-3 py-3 px-4 border text-left rounded-xl transition-all ${
+                          form.inicio_desde === op.value
+                            ? "border-purple-500 bg-purple-50"
+                            : "border-gray-200 bg-white hover:border-purple-300"
+                        }`}>
+                        <div className={`w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center ${
+                          form.inicio_desde === op.value ? "border-purple-500 bg-purple-500" : "border-gray-300"
+                        }`}>
+                          {form.inicio_desde === op.value && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        </div>
+                        <div>
+                          <p className={`text-sm font-semibold ${form.inicio_desde === op.value ? "text-purple-700" : "text-gray-700"}`}>{op.label}</p>
+                          <p className="text-xs text-gray-400">{op.sub}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Imagen (opcional)</label>
+                {preview ? (
+                  <div className="relative">
+                    <img src={preview} alt="preview" className="w-full h-40 object-cover rounded-xl border border-gray-200" />
+                    <button onClick={() => { setImagen(null); setPreview(null); }}
+                      className="absolute top-2 right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-md text-red-500 hover:bg-red-50">
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center gap-2 border border-dashed border-gray-200 rounded-xl px-4 py-8 cursor-pointer hover:border-purple-300 hover:bg-purple-50 transition-all">
+                    <Image size={24} className="text-gray-300" />
+                    <span className="text-sm text-gray-400">Clic para seleccionar</span>
+                    <span className="text-xs text-gray-300">PNG, JPG hasta 4MB</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={e => {
+                      const file = e.target.files[0];
+                      if (file) { setImagen(file); setPreview(URL.createObjectURL(file)); }
+                    }} />
+                  </label>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {error && (
+            <p className="text-red-500 text-sm flex items-center gap-2 mt-4">
+              <AlertCircle size={16} />{error}
+            </p>
           )}
-
-          <div>
-            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Imagen (opcional)</label>
-            {preview ? (
-              <div className="relative">
-                <img src={preview} alt="preview" className="w-full h-32 object-cover rounded-xl border border-gray-200" />
-                <button onClick={() => { setImagen(null); setPreview(null); }}
-                  className="absolute top-2 right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-md text-red-500 hover:bg-red-50">
-                  <X size={14} />
-                </button>
-              </div>
-            ) : (
-              <label className="flex items-center gap-3 border border-dashed border-gray-200 rounded-xl px-4 py-4 cursor-pointer hover:border-purple-300 hover:bg-purple-50 transition-all">
-                <Image size={18} className="text-gray-400" />
-                <span className="text-sm text-gray-400">Seleccionar imagen</span>
-                <input type="file" accept="image/*" className="hidden" onChange={e => {
-                  const file = e.target.files[0];
-                  if (file) { setImagen(file); setPreview(URL.createObjectURL(file)); }
-                }} />
-              </label>
-            )}
-          </div>
-
-          {error && <p className="text-red-500 text-sm flex items-center gap-2"><AlertCircle size={16} />{error}</p>}
         </div>
+
         <div className="flex gap-3 px-6 pb-6">
           <button onClick={onClose} className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-500 text-sm font-semibold hover:bg-gray-50">Cancelar</button>
           <button onClick={handleSave} disabled={saving}
@@ -334,7 +367,7 @@ export default function MisEntradasPage({ user }) {
           </div>
           <div>
             <p className="text-xs font-semibold text-purple-200 uppercase tracking-widest mb-0.5">Saldo en billetera</p>
-            <p className="text-3xl font-bold text-white">{fmt(billetera.saldo, billetera.moneda)}</p>
+<p className="text-3xl font-bold text-white">{fmt(billetera.saldo, user.currency)}</p>
           </div>
         </div>
       )}
@@ -417,8 +450,7 @@ export default function MisEntradasPage({ user }) {
 
                   {/* Monto */}
                   <p className="text-lg font-bold text-gray-900 shrink-0">
-                    {fmt(entrada.monto, entrada.moneda)}
-                  </p>
+{fmt(entrada.monto, user.currency)}                  </p>
 
                   {/* Acciones */}
                   <div className="flex items-center gap-1 shrink-0">

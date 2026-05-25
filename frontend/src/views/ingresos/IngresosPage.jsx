@@ -3,7 +3,7 @@ import { authFetch } from "../../router/authFetch";
 import {
   TrendingUp, Plus, Check, Trash2,
   DollarSign, Calendar, AlertCircle, Settings,
-  ChevronLeft, ChevronRight, RefreshCw, History,
+  ChevronLeft, ChevronRight, RefreshCw, History, Wallet,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
@@ -52,6 +52,7 @@ export default function IngresosPage({ user }) {
   const [config,    setConfig]    = useState(null);
   const [ingresos,  setIngresos]  = useState([]);
   const [resumen,   setResumen]   = useState({ total_confirmado: 0, total_proyectado: 0 });
+  const [billetera, setBilletera] = useState(null);
   const [loading,   setLoading]   = useState(true);
   const [chartData, setChartData] = useState([]);
 
@@ -63,9 +64,10 @@ export default function IngresosPage({ user }) {
   const cargar = async () => {
     setLoading(true);
     try {
-      const [rConfig, rIngresos] = await Promise.all([
+      const [rConfig, rIngresos, rBil] = await Promise.all([
         authFetch("/ingresos/config", user.token),
         authFetch(`/ingresos?mes=${mes}&anio=${anio}`, user.token),
+        authFetch("/billetera", user.token),
       ]);
       const cfg = rConfig.ok ? await rConfig.json() : null;
       const ing = rIngresos.ok ? await rIngresos.json() : { ingresos: [], total_confirmado: 0, total_proyectado: 0 };
@@ -73,6 +75,11 @@ export default function IngresosPage({ user }) {
       setConfig(cfg);
       setIngresos(ing.ingresos ?? []);
       setResumen({ total_confirmado: ing.total_confirmado, total_proyectado: ing.total_proyectado });
+
+      if (rBil.ok) {
+        const d = await rBil.json();
+        setBilletera(d.billetera);
+      }
 
       if (cfg && cfg.dia_pago === 0) {
         setShowModalDiaPago(true);
@@ -145,6 +152,18 @@ export default function IngresosPage({ user }) {
     && !configCreadoEsteMes
     && ingresos.filter(i => i.tipo === "variable").length === 0;
 
+  // Próximo cobro
+  const proximoCobro = config && config.dia_pago > 0 && mesActual ? (() => {
+    const diaP = config.dia_pago;
+    const hoyDia = hoy.getDate();
+    const proximaFecha = diaP > hoyDia
+      ? new Date(anio, mes - 1, diaP)
+      : new Date(anio, mes, diaP);
+    return proximaFecha.toLocaleDateString("es-PE", {
+      day: "numeric", month: "long", year: "numeric"
+    });
+  })() : null;
+
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
 
@@ -152,7 +171,7 @@ export default function IngresosPage({ user }) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Ingreso Salarial</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Gestiona y visualiza tus ingresos mensuales fijo o si es variable</p>
+          <p className="text-sm text-gray-400 mt-0.5">Gestiona y visualiza tus ingresos mensuales</p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => navigate("/ingresos/historial")}
@@ -203,16 +222,24 @@ export default function IngresosPage({ user }) {
 
       {/* Tarjetas resumen */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Saldo billetera</p>
+          <p className="text-2xl font-bold text-gray-900">
+           {billetera ? fmt(billetera.saldo, user.currency) : "—"}
+
+          </p>
+          <p className="text-xs text-purple-500 font-semibold mt-1 flex items-center gap-1">
+            <Wallet size={12} /> Dinero disponible
+          </p>
+        </div>
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Total confirmado</p>
           <p className="text-2xl font-bold text-gray-900">{fmt(resumen.total_confirmado, user.currency)}</p>
           <p className="text-xs text-green-500 font-semibold mt-1 flex items-center gap-1"><Check size={12} /> Dinero recibido</p>
         </div>
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Proyectado</p>
-          <p className="text-2xl font-bold text-gray-900">{fmt(resumen.total_proyectado, user.currency)}</p>
-          <p className="text-xs text-blue-400 font-semibold mt-1 flex items-center gap-1"><Calendar size={12} /> Por recibir</p>
-        </div>
+
+ 
+
         <div className="bg-purple-600 rounded-2xl p-5 shadow-sm">
           <p className="text-xs font-semibold text-purple-200 uppercase tracking-widest mb-2">Total del mes</p>
           <p className="text-2xl font-bold text-white">
@@ -233,7 +260,7 @@ export default function IngresosPage({ user }) {
                 )}
                 {config.dia_pago > 0 && (
                   <span className="text-xs bg-purple-500 text-purple-100 px-2 py-0.5 rounded-full font-semibold">
-                    Día {config.dia_pago} de cada mes
+                    Día {config.dia_pago}
                   </span>
                 )}
               </>
@@ -243,6 +270,28 @@ export default function IngresosPage({ user }) {
           </div>
         </div>
       </div>
+
+      {/* Próximo cobro */}
+      {proximoCobro && (
+        <div className="bg-white rounded-2xl border border-gray-100 px-6 py-4 shadow-sm flex items-center gap-4">
+          <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center shrink-0">
+            <Calendar size={18} className="text-purple-600" />
+          </div>
+          <div className="flex-1">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-0.5">Próximo cobro</p>
+            <p className="text-sm font-bold text-gray-800">{proximoCobro}</p>
+          </div>
+          {config.monto_base && (
+            <p className="text-base font-bold text-purple-600">{fmt(config.monto_base, user.currency)}</p>
+          )}
+          {config.tipo === "variable" && (
+            <span className="text-xs bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded-full">Variable</span>
+          )}
+          {config.tipo === "fijo" && (
+            <span className="text-xs bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded-full">Fijo</span>
+          )}
+        </div>
+      )}
 
       {/* Gráfico */}
       <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
@@ -265,38 +314,6 @@ export default function IngresosPage({ user }) {
           </AreaChart>
         </ResponsiveContainer>
       </div>
-
-      {/* Próximo cobro */}
-      {config && config.dia_pago > 0 && mesActual && (() => {
-        const hoyDia  = hoy.getDate();
-        const diaP    = config.dia_pago;
-        const proximaFecha = diaP > hoyDia
-          ? new Date(anio, mes - 1, diaP)
-          : new Date(anio, mes, diaP);
-        const label = proximaFecha.toLocaleDateString("es-PE", {
-          day: "numeric", month: "long", year: "numeric"
-        });
-        return (
-          <div className="bg-white rounded-2xl border border-gray-100 px-6 py-4 shadow-sm flex items-center gap-4">
-            <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center shrink-0">
-              <Calendar size={18} className="text-purple-600" />
-            </div>
-            <div className="flex-1">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-0.5">Próximo cobro</p>
-              <p className="text-sm font-bold text-gray-800">{label}</p>
-            </div>
-            {config.monto_base && (
-              <p className="text-base font-bold text-purple-600">{fmt(config.monto_base, user.currency)}</p>
-            )}
-            {config.tipo === "variable" && (
-              <span className="text-xs bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded-full">Variable</span>
-            )}
-            {config.tipo === "fijo" && (
-              <span className="text-xs bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded-full">Fijo</span>
-            )}
-          </div>
-        );
-      })()}
 
       {/* Lista ingresos */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
