@@ -12,6 +12,8 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\EntradaController;
 use App\Http\Controllers\GastoController;
 use App\Http\Controllers\BilleteraTransaccionController;
+use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\MetaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -63,6 +65,8 @@ Route::delete('/billetera/categorias/{categoria}',  [BilleteraTransaccionControl
 Route::get ('/billetera/transacciones', [BilleteraTransaccionController::class, 'index']);
 Route::post('/billetera/transacciones', [BilleteraTransaccionController::class, 'store']);
 
+Route::get('/reportes', [ReporteController::class, 'index']);
+
     // Testimonios (usuario)
     Route::get   ('/testimonios/mio', [TestimonioController::class, 'mio']);
     Route::post  ('/testimonios',     [TestimonioController::class, 'guardar']);
@@ -79,7 +83,19 @@ Route::post('/billetera/transacciones', [BilleteraTransaccionController::class, 
             'role'    => $request->user()->role,
         ]);
     });
-
+Route::get('/billetera/historial', [BilleteraTransaccionController::class, 'historial']);
+Route::get   ('/metas',                    [MetaController::class, 'index']);
+Route::post  ('/metas',                    [MetaController::class, 'store']);
+Route::get   ('/metas/analisis',           [MetaController::class, 'analisis']);   // ← antes de {meta}
+Route::get   ('/metas/{meta}',             [MetaController::class, 'show']);
+Route::post  ('/metas/{meta}',             [MetaController::class, 'update']);     // POST por FormData
+Route::delete('/metas/{meta}',             [MetaController::class, 'destroy']);
+Route::post  ('/metas/{meta}/aportar',     [MetaController::class, 'aportar']);
+Route::post  ('/metas/{meta}/retirar',     [MetaController::class, 'retirar']);
+Route::patch ('/metas/{meta}/progreso',    [MetaController::class, 'actualizarProgreso']);
+Route::patch ('/metas/{meta}/estado',      [MetaController::class, 'cambiarEstado']);
+Route::get   ('/metas/{meta}/aportes',     [MetaController::class, 'aportes']);
+ 
     // Categorías de gastos
 Route::get   ('/gastos/categorias',             [GastoController::class, 'categorias']);
 Route::post  ('/gastos/categorias',             [GastoController::class, 'storeCategoria']);

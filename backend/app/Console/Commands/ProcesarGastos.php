@@ -31,33 +31,22 @@ class ProcesarGastos extends Command
         $controller = new GastoController();
         $procesados = 0;
 
-        foreach ($gastos as $gasto) {
-            // No procesar el mismo mes que fue creado si inicio_desde = proximo
-            if ($gasto->inicio_desde === 'proximo') {
-                $creadoEsteMes = $gasto->created_at->month === $hoy->month
-                    && $gasto->created_at->year === $hoy->year;
-                if ($creadoEsteMes) continue;
-            }
-
-            if ($gasto->tipo_registro === 'automatico') {
-                // Descuenta directo de billetera
-                $controller->restarDeBilletera(
-                    $gasto->user,
-                    $gasto->monto,
-                    $gasto->moneda,
-                    $gasto->nombre,
-                    $hoy->toDateString(),
-                    $gasto->id
-                );
-                $this->info("✓ AUTO {$gasto->nombre} — {$gasto->user->name}");
-            } else {
-                // Crea movimiento pendiente para que el usuario confirme
-                $controller->crearMovimientoPendiente($gasto->user, $gasto, $hoy);
-                $this->info("⏳ MANUAL {$gasto->nombre} — {$gasto->user->name}");
-            }
-
-            $procesados++;
+      foreach ($gastos as $gasto) {
+    if ($gasto->inicio_desde === 'proximo') {
+        $creadoEsteMes = $gasto->created_at->month === $hoy->month
+            && $gasto->created_at->year === $hoy->year;
+        if ($creadoEsteMes) {
+            $this->line("⏭ SKIP {$gasto->nombre} — creado este mes");
+            continue;
         }
+    }
+
+    $controller->crearMovimientoPendiente($gasto->user, $gasto, $hoy);
+
+    $tipo = $gasto->tipo_registro === 'automatico' ? '✓ AUTO' : '⏳ MANUAL';
+    $this->info("{$tipo} {$gasto->nombre} — {$gasto->user->name}");
+    $procesados++;
+}
 
         $this->info("Procesados: {$procesados}");
     }

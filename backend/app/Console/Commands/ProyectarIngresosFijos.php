@@ -9,7 +9,8 @@ use Carbon\Carbon;
 
 class ProyectarIngresosFijos extends Command
 {
-    protected $signature   = 'ingresos:proyectar {--fecha= : Fecha a simular en formato Y-m-d}';
+    protected $signature = 'ingresos:proyectar {--fecha= : Fecha a simular en formato Y-m-d}';
+
     protected $description = 'Proyecta ingresos fijos del mes según el día de pago configurado';
 
     public function handle()
@@ -18,7 +19,7 @@ class ProyectarIngresosFijos extends Command
             ? Carbon::parse($this->option('fecha'))
             : now();
 
-$configs = IngresoConfig::where('tipo', 'fijo')
+        $configs = IngresoConfig::where('tipo', 'fijo')
             ->whereNotNull('monto_base')
             ->where('dia_pago', '!=', 0)
             ->get();
@@ -26,30 +27,47 @@ $configs = IngresoConfig::where('tipo', 'fijo')
         $proyectados = 0;
 
         foreach ($configs as $config) {
-            if ($hoy->day !== (int) $config->dia_pago) continue;
 
+            // Solo ejecutar si hoy coincide con el día de pago
+            if ($hoy->day !== (int) $config->dia_pago) {
+                continue;
+            }
+
+            // Verificar si ya existe ingreso este mes
             $existe = Ingreso::where('user_id', $config->user_id)
                 ->where('tipo', 'fijo')
                 ->where('mes', $hoy->month)
                 ->where('anio', $hoy->year)
                 ->exists();
 
-            if (!$existe) {
-                Ingreso::create([
-                    'user_id'     => $config->user_id,
-                    'monto'       => $config->monto_base,
-                    'moneda'      => $config->moneda,
-                    'fecha'       => $hoy->toDateString(),
-                    'descripcion' => $config->descripcion ?? 'Ingreso fijo mensual',
-                    'tipo'        => 'fijo',
-                    'confirmado'  => true,
-                    'mes'         => $hoy->month,
-                    'anio'        => $hoy->year,
-                ]);
-                $proyectados++;
+            if ($existe) {
+                $this->line("⏭ SKIP ingreso user_id={$config->user_id} — ya existe este mes");
+                continue;
             }
+
+            // Crear ingreso
+            Ingreso::create([
+                'user_id'     => $config->user_id,
+                'monto'       => $config->monto_base,
+                'moneda'      => $config->moneda,
+                'fecha'       => $hoy->toDateString(),
+                'descripcion' => $config->descripcion ?? 'Ingreso fijo mensual',
+                'tipo'        => 'fijo',
+                'confirmado'  => true,
+                'mes'         => $hoy->month,
+                'anio'        => $hoy->year,
+            ]);
+
+            $proyectados++;
+
+            $this->info(
+                "✓ Ingreso proyectado user_id={$config->user_id} — {$config->monto_base} {$config->moneda}"
+            );
         }
 
-        $this->info("Ingresos proyectados: {$proyectados}");
+        $this->newLine();
+        $this->info("Total proyectados: {$proyectados}");
+
+        return Command::SUCCESS;
     }
 }

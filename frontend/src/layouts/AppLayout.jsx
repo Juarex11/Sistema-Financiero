@@ -11,14 +11,18 @@ import AgendaPage         from "../views/eventos/AgendaPage";
 import TestimoniosAdmin   from "../views/admin/TestimoniosAdmin";
 import TestimoniosUsuario from "../views/user/TestimoniosUsuario";
 import SettingsView       from "../views/SettingsPanel";
-import IngresosPage from "../views/ingresos/IngresosPage";
+import IngresosPage          from "../views/ingresos/IngresosPage";
 import HistorialSalarialPage from "../views/ingresos/HistorialSalarialPage";
 import SoportePage      from "../views/soporte/SoportePage";
 import SoporteAdminPage from "../views/soporte/SoporteAdminPage";
-import MisEntradasPage from "../views/entradas/MisEntradasPage";
+import MisEntradasPage       from "../views/entradas/MisEntradasPage";
 import HistorialEntradasPage from "../views/entradas/HistorialEntradasPage";
 import GastosPage          from "../views/gastos/GastosPage";
 import HistorialGastosPage from "../views/gastos/HistorialGastosPage";
+import UserReportes        from "../views/reportes/UserReportes";
+import HistorialBilletera  from "../views/billetera/HistorialBilletera";
+import UserMetas           from "../views/metas/UserMetas";           // ← NUEVO
+
 export default function AppLayout({ session, onLogout, onUpdateUser }) {
   const [collapsed,             setCollapsed]             = useState(false);
   const [mobileOpen,            setMobileOpen]            = useState(false);
@@ -59,31 +63,37 @@ export default function AppLayout({ session, onLogout, onUpdateUser }) {
             <Route path="/dashboard" element={
               session.role === "admin"
                 ? <AdminDashboard user={session} onLogout={onLogout} />
-                : <UserDashboard  user={session} onLogout={onLogout} />
+                : <UserDashboard  user={session} onLogout={onLogout} onNavigate={(path) => { navigate(path); }} />
             } />
             <Route path="/anuncios"    element={<AnunciosPage user={session} />} />
             <Route path="/agenda"      element={<AgendaPage   user={session} />} />
-            <Route path="/ingresos" element={<IngresosPage user={session} />} />
-<Route path="/ingresos/historial" element={<HistorialSalarialPage user={session} />} />
+            <Route path="/ingresos"           element={<IngresosPage          user={session} />} />
+            <Route path="/ingresos/historial" element={<HistorialSalarialPage user={session} />} />
             <Route path="/testimonios" element={
               session.role === "admin"
                 ? <TestimoniosAdmin   user={session} onPendientesChange={setPendientesTestimonios} />
                 : <TestimoniosUsuario user={session} />
             } />
             <Route path="/ajustes" element={<SettingsView user={session} onUpdateUser={onUpdateUser} />} />
-            <Route path="*"        element={<Navigate to="/dashboard" replace />} />
             <Route path="/soporte" element={
-  session.role === "admin"
-    ? <SoporteAdminPage user={session} />
-    : <SoportePage      user={session} />
-} />
-<Route path="/soporte/:id" element={
-  session.role === "admin"
-    ? <SoporteAdminPage user={session} />
-    : <SoportePage      user={session} />
-} /><Route path="/mis-entradas" element={<MisEntradasPage user={session} />} />
-<Route path="/mis-entradas/historial" element={<HistorialEntradasPage user={session} />} />          <Route path="/gastos"            element={<GastosPage          user={session} />} />
-<Route path="/gastos/historial"  element={<HistorialGastosPage user={session} />} /></Routes>
+              session.role === "admin"
+                ? <SoporteAdminPage user={session} />
+                : <SoportePage      user={session} />
+            } />
+            <Route path="/soporte/:id" element={
+              session.role === "admin"
+                ? <SoporteAdminPage user={session} />
+                : <SoportePage      user={session} />
+            } />
+            <Route path="/mis-entradas"           element={<MisEntradasPage       user={session} />} />
+            <Route path="/mis-entradas/historial" element={<HistorialEntradasPage user={session} />} />
+            <Route path="/gastos"           element={<GastosPage          user={session} />} />
+            <Route path="/gastos/historial" element={<HistorialGastosPage user={session} />} />
+            <Route path="/reportes"            element={<UserReportes       user={session} />} />
+            <Route path="/billetera/historial" element={<HistorialBilletera user={session} />} />
+            <Route path="/metas"               element={<UserMetas          user={session} />} />  {/* ← NUEVO */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
         </main>
       </div>
     </div>

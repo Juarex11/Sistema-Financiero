@@ -3,7 +3,7 @@ import logo from "../assets/logo.png";
 import {
   Home, TrendingUp, TrendingDown, BarChart3,
   Wallet, Users, Settings, MessageCircle,
-  Megaphone, Award, Calendar, ArrowDownCircle, Receipt,
+  Megaphone, Award, Calendar, ArrowDownCircle, Receipt, ListOrdered, Target,
 } from "lucide-react";
 
 const navItems = [
@@ -11,19 +11,19 @@ const navItems = [
     section: "PRINCIPAL",
     items: [
       { label: "Dashboard", path: "/dashboard", Icon: Home },
+      { label: "Historial", path: "/billetera/historial", Icon: ListOrdered },
     ],
   },
-{
-  section: "FINANZAS",
-  items: [
-    { label: "Ingreso Salarial", path: "/ingresos",      Icon: TrendingUp      },
-    { label: "Mis Entradas",     path: "/mis-entradas",  Icon: ArrowDownCircle },
-    { label: "Egreso Gastos",    path: "/gastos",        Icon: Receipt         },
-    { label: "Egresos",          path: "/egresos",        Icon: TrendingDown    },
-    { label: "Reportes",         path: "/reportes",       Icon: BarChart3       },
-    { label: "Presupuestos",     path: "/presupuestos",   Icon: Wallet          },
-  ],
-},
+  {
+    section: "FINANZAS",
+    items: [
+      { label: "Ingreso Salarial",     path: "/ingresos",      Icon: TrendingUp      },
+      { label: "Entradas Habituales",  path: "/mis-entradas",  Icon: ArrowDownCircle },
+      { label: "Gastos Habituales",    path: "/gastos",        Icon: Receipt         },
+      { label: "Reportes",             path: "/reportes",      Icon: BarChart3       },
+      { label: "Metas",                path: "/metas",         Icon: Target          },
+    ],
+  },
   {
     section: "AGENDA",
     items: [
@@ -33,16 +33,16 @@ const navItems = [
   {
     section: "COMUNIDAD",
     items: [
-      { label: "Anuncios",    path: "/anuncios",    Icon: Megaphone },
+      { label: "Anuncios",    path: "/anuncios",    Icon: Megaphone     },
       { label: "Testimonios", path: "/testimonios", Icon: MessageCircle },
     ],
   },
   {
     section: "CONFIGURACIÓN",
     items: [
-      { label: "Usuarios", path: "/usuarios", Icon: Users,       adminOnly: true },
-    { label: "Soporte",  path: "/soporte",  Icon: MessageCircle },
-    { label: "Ajustes",  path: "/ajustes",  Icon: Settings },
+      { label: "Usuarios", path: "/usuarios", Icon: Users,         adminOnly: true },
+      { label: "Soporte",  path: "/soporte",  Icon: MessageCircle },
+      { label: "Ajustes",  path: "/ajustes",  Icon: Settings      },
     ],
   },
 ];
@@ -147,20 +147,10 @@ export default function Sidebar({ collapsed, mobileOpen, onMobileClose, role, ac
   return (
     <>
       <style>{`
-        .custom-scroll::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scroll::-webkit-scrollbar-track {
-          background: #f1f1f1;
-          border-radius: 4px;
-        }
-        .custom-scroll::-webkit-scrollbar-thumb {
-          background: #c4b5fd;
-          border-radius: 4px;
-        }
-        .custom-scroll::-webkit-scrollbar-thumb:hover {
-          background: #a78bfa;
-        }
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #c4b5fd; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #a78bfa; }
       `}</style>
 
       <aside className={`hidden lg:flex flex-col h-full bg-white border-r border-gray-100 shrink-0 transition-all duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"}`}>

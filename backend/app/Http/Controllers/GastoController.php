@@ -167,39 +167,48 @@ class GastoController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, Gasto $gasto)
-    {
-        if ($gasto->user_id !== $request->user()->id) {
-            return response()->json(['message' => 'No autorizado.'], 403);
-        }
-
-        $data = $request->validate([
-            'nombre'        => 'nullable|string|max:100',
-            'descripcion'   => 'nullable|string|max:255',
-            'monto'         => 'nullable|numeric|min:0.01',
-            'dia_pago'      => 'nullable|integer|min:1|max:31',
-            'hora_pago'     => 'nullable|date_format:H:i',
-            'tipo_registro' => 'nullable|in:automatico,manual',
-            'categoria_id'  => 'nullable|exists:gasto_categorias,id',
-            'activo'        => 'nullable|boolean',
-        ]);
-
-        if ($request->hasFile('imagen')) {
-            if ($gasto->imagen) Storage::disk('public')->delete($gasto->imagen);
-            $data['imagen'] = $request->file('imagen')->store('gastos', 'public');
-        }
-
-        $data['configurado'] = !empty($data['monto'] ?? $gasto->monto)
-            && !empty($data['dia_pago'] ?? $gasto->dia_pago);
-
-        $gasto->update($data);
-
-        return response()->json([
-            'message' => 'Gasto actualizado.',
-            'gasto'   => $gasto->load('categoria'),
-        ]);
+ public function update(Request $request, Gasto $gasto)
+{
+    if ($gasto->user_id !== $request->user()->id) {
+        return response()->json(['message' => 'No autorizado.'], 403);
     }
 
+    $data = $request->validate([
+        'nombre'        => 'nullable|string|max:100',
+        'descripcion'   => 'nullable|string|max:255',
+        'monto'         => 'nullable|numeric|min:0.01',
+        'dia_pago'      => 'nullable|integer|min:1|max:31',
+        'hora_pago'     => 'nullable|date_format:H:i',
+        'tipo_registro' => 'nullable|in:automatico,manual',
+        'categoria_id'  => 'nullable|exists:gasto_categorias,id',
+        'activo'        => 'nullable|boolean',
+    ]);
+
+    if ($request->hasFile('imagen')) {
+        if ($gasto->imagen) Storage::disk('public')->delete($gasto->imagen);
+        $data['imagen'] = $request->file('imagen')->store('gastos', 'public');
+    }
+
+    $data['configurado'] = !empty($data['monto'] ?? $gasto->monto)
+        && !empty($data['dia_pago'] ?? $gasto->dia_pago);
+
+    $gasto->update($data);
+
+    // Crear movimiento si el día de pago ya llegó este mes y no existe aún
+    if ($gasto->configurado && $gasto->activo) {
+        $hoy     = now();
+        $diaPago = (int) ($data['dia_pago'] ?? $gasto->dia_pago);
+
+        if ($diaPago <= $hoy->day) {
+            $this->crearMovimientoPendiente($request->user(), $gasto, $hoy);
+        }
+    }
+
+    return response()->json([
+        'message' => 'Gasto actualizado.',
+        'gasto'   => $gasto->load('categoria'),
+    ]);
+}
     public function destroy(Request $request, Gasto $gasto)
     {
         if ($gasto->user_id !== $request->user()->id) {
@@ -291,22 +300,30 @@ class GastoController extends Controller
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    public function crearMovimientoPendiente($user, Gasto $gasto, Carbon $fecha): void
-    {
-        $billetera = $user->billetera ?? Billetera::create([
-            'user_id' => $user->id,
-            'saldo'   => 0,
-            'moneda'  => $gasto->moneda,
-        ]);
-
-        $existe = GastoMovimiento::where('user_id', $user->id)
-            ->where('gasto_id', $gasto->id)
-            ->where('mes', $fecha->month)
-            ->where('anio', $fecha->year)
-            ->exists();
-
-        if ($existe) return;
-
+public function crearMovimientoPendiente($user, Gasto $gasto, Carbon $fecha): void
+{
+    $billetera = $user->billetera ?? Billetera::create([
+        'user_id' => $user->id,
+        'saldo'   => 0,
+        'moneda'  => $gasto->moneda,
+    ]);
+ 
+    $existe = GastoMovimiento::where('user_id', $user->id)
+        ->where('gasto_id', $gasto->id)
+        ->where('mes', $fecha->month)
+        ->where('anio', $fecha->year)
+        ->exists();
+ 
+    if ($existe) return;
+ 
+    // ✅ Automático → pagado y descuenta billetera de inmediato
+    // ✅ Manual     → pendiente, espera confirmación del usuario
+    $esAutomatico = $gasto->tipo_registro === 'automatico';
+    $estado       = $esAutomatico ? 'pagado' : 'pendiente';
+ 
+    DB::transaction(function () use (
+        $user, $billetera, $gasto, $fecha, $estado, $esAutomatico
+    ) {
         GastoMovimiento::create([
             'user_id'      => $user->id,
             'billetera_id' => $billetera->id,
@@ -314,12 +331,18 @@ class GastoController extends Controller
             'monto'        => $gasto->monto,
             'moneda'       => $gasto->moneda,
             'tipo'         => 'salida',
-            'estado'       => 'pendiente',
+            'estado'       => $estado,
             'descripcion'  => $gasto->nombre,
             'fecha'        => $fecha->toDateString(),
             'hora'         => $gasto->hora_pago,
             'mes'          => $fecha->month,
             'anio'         => $fecha->year,
         ]);
-    }
+ 
+        // Solo descontar si es automático
+        if ($esAutomatico) {
+            $billetera->restar((float) $gasto->monto);
+        }
+    });
+}
 }

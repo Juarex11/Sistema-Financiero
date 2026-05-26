@@ -22,27 +22,59 @@ function InnerApp() {
 
     authFetch("/me", token)
       .then(async (res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const user = await res.json();
         if (cancelled) return;
 
-        if (user.role === "admin") {
-          setSession(normalizeUser(token, user));
-          setOnboardingPending(false);
+        // ✅ Solo 401 = token inválido → limpiar y mandar al login
+        if (res.status === 401) {
+          TokenStore.clear();
+          setSession(null);
+          setLoading(false);
           return;
         }
 
-        const ob     = await authFetch("/onboarding", token);
-        const obData = await ob.json();
+        // ✅ Cualquier otro error (500, red, timeout) → mantener sesión en loading=false
+        // El usuario verá la app en blanco pero no perderá su sesión
+        if (!res.ok) {
+          // Intentar restaurar sesión mínima desde el token guardado
+          // (no limpiamos — el token puede seguir siendo válido)
+          setLoading(false);
+          return;
+        }
+
+        const user = await res.json();
         if (cancelled) return;
 
-        setSession(normalizeUser(token, user));
-        setOnboardingPending(!obData.completado);
+        // Admin no necesita onboarding
+        if (user.role === "admin") {
+          setSession(normalizeUser(token, user));
+          setOnboardingPending(false);
+          setLoading(false);
+          return;
+        }
+
+        // Usuario normal → verificar onboarding
+        try {
+          const ob     = await authFetch("/onboarding", token);
+          const obData = await ob.json();
+          if (cancelled) return;
+          setSession(normalizeUser(token, user));
+          setOnboardingPending(!obData.completado);
+        } catch {
+          // Si falla el onboarding, igual restauramos la sesión
+          if (!cancelled) setSession(normalizeUser(token, user));
+        }
+
+        if (!cancelled) setLoading(false);
       })
       .catch(() => {
-        if (!cancelled) { TokenStore.clear(); setSession(null); }
+        if (cancelled) return;
+        // ✅ Error de red / timeout / CORS → NO limpiar token
+        // El usuario sigue "logueado" — simplemente no pudimos verificar ahora
+        // Intentamos cargar la app igual; si el token expiró, las peticiones darán 401
+        setLoading(false);
       })
       .finally(() => {
+        // Garantía: loading siempre termina
         if (!cancelled) setLoading(false);
       });
 

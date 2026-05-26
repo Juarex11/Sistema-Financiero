@@ -9,29 +9,21 @@ import {
 
 function hoyStr() { return new Date().toISOString().split("T")[0]; }
 
-const COLORES_PRESET = [
-  "#6366f1", "#8b5cf6", "#ec4899", "#ef4444",
-  "#f97316", "#f59e0b", "#10b981", "#3b82f6", "#14b8a6",
-];
-
 export default function ModalTransaccion({ tipo, moneda, token, onClose, onExito }) {
   const esIngreso    = tipo === "ingreso";
   const fileInputRef = useRef(null);
 
-  const [monto,        setMonto]        = useState("");
-  const [descripcion,  setDescripcion]  = useState("");
-  const [etiqueta,     setEtiqueta]     = useState("");
-  const [fecha,        setFecha]        = useState(hoyStr());
-  const [categoriaId,  setCategoriaId]  = useState("");
-  const [categorias,   setCategorias]   = useState([]);
-  const [fotos,        setFotos]        = useState([]);
-  const [previews,     setPreviews]     = useState([]);
-  const [loading,      setLoading]      = useState(false);
-  const [loadingCats,  setLoadingCats]  = useState(true);
-  const [error,        setError]        = useState("");
-  const [showNuevaCat, setShowNuevaCat] = useState(false);
-  const [nuevaCat,     setNuevaCat]     = useState({ nombre: "", color: "#6366f1", tipo: "ambos" });
-  const [savingCat,    setSavingCat]    = useState(false);
+  const [monto,       setMonto]       = useState("");
+  const [descripcion, setDescripcion] = useState("");
+  const [etiqueta,    setEtiqueta]    = useState("");
+  const [fecha,       setFecha]       = useState(hoyStr());
+  const [categoriaId, setCategoriaId] = useState("");
+  const [categorias,  setCategorias]  = useState([]);
+  const [fotos,       setFotos]       = useState([]);
+  const [previews,    setPreviews]    = useState([]);
+  const [loading,     setLoading]     = useState(false);
+  const [loadingCats, setLoadingCats] = useState(true);
+  const [error,       setError]       = useState("");
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -66,26 +58,6 @@ export default function ModalTransaccion({ tipo, moneda, token, onClose, onExito
   };
 
   const quitarFoto = (i) => setFotos(prev => prev.filter((_, idx) => idx !== i));
-
-  const guardarCategoria = async () => {
-    if (!nuevaCat.nombre.trim()) return;
-    setSavingCat(true);
-    try {
-      const r = await authFetch("/billetera/categorias", token, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(nuevaCat),
-      });
-      if (r.ok) {
-        const d = await r.json();
-        setCategorias(prev => [...prev, d.categoria]);
-        setCategoriaId(String(d.categoria.id));
-        setShowNuevaCat(false);
-        setNuevaCat({ nombre: "", color: "#6366f1", tipo: "ambos" });
-      }
-    } catch {}
-    finally { setSavingCat(false); }
-  };
 
   const enviar = async () => {
     if (!monto || parseFloat(monto) <= 0) { setError("Ingresa un monto válido.");  return; }
@@ -144,7 +116,6 @@ export default function ModalTransaccion({ tipo, moneda, token, onClose, onExito
 
           {/* ── Fila 1: Monto + Fecha ── */}
           <div className="grid grid-cols-2 gap-3">
-            {/* Monto */}
             <div>
               <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-1.5">
                 Monto
@@ -160,8 +131,6 @@ export default function ModalTransaccion({ tipo, moneda, token, onClose, onExito
                 />
               </div>
             </div>
-
-            {/* Fecha */}
             <div>
               <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-1.5">
                 <Calendar size={11} className="inline mr-1" />Fecha
@@ -198,76 +167,21 @@ export default function ModalTransaccion({ tipo, moneda, token, onClose, onExito
             </div>
           </div>
 
-          {/* ── Categoría (ancho completo) ── */}
+          {/* ── Categoría ── */}
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-                <FolderOpen size={11} className="inline mr-1" />Categoría
-              </label>
-              <button
-                onClick={() => setShowNuevaCat(v => !v)}
-                className="text-[11px] font-semibold text-purple-600 hover:text-purple-700 flex items-center gap-0.5"
-              >
-                <Plus size={11} />Nueva
-              </button>
-            </div>
-
-            {/* Crear categoría inline */}
-            {showNuevaCat && (
-              <div className="mb-3 bg-gray-50 border border-gray-200 rounded-xl p-3 space-y-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="text" placeholder="Nombre"
-                    value={nuevaCat.nombre}
-                    onChange={e => setNuevaCat(p => ({ ...p, nombre: e.target.value }))}
-                    className="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-400 transition"
-                  />
-                  <select
-                    value={nuevaCat.tipo}
-                    onChange={e => setNuevaCat(p => ({ ...p, tipo: e.target.value }))}
-                    className="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-400 transition"
-                  >
-                    <option value="ambos">Ingresos y Egresos</option>
-                    <option value="ingreso">Solo Ingresos</option>
-                    <option value="egreso">Solo Egresos</option>
-                  </select>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {COLORES_PRESET.map(c => (
-                      <button
-                        key={c}
-                        onClick={() => setNuevaCat(p => ({ ...p, color: c }))}
-                        className={`w-6 h-6 rounded-full transition-all ${nuevaCat.color === c ? "ring-2 ring-offset-1 ring-gray-400 scale-110" : ""}`}
-                        style={{ backgroundColor: c }}
-                      />
-                    ))}
-                    <input
-                      type="color" value={nuevaCat.color}
-                      onChange={e => setNuevaCat(p => ({ ...p, color: e.target.value }))}
-                      className="w-6 h-6 rounded-full border-0 cursor-pointer bg-transparent"
-                    />
-                  </div>
-                  <button
-                    onClick={guardarCategoria}
-                    disabled={savingCat || !nuevaCat.nombre.trim()}
-                    className="px-3 py-1.5 bg-purple-600 text-white text-xs font-bold rounded-xl hover:bg-purple-700 disabled:opacity-50 transition flex items-center gap-1"
-                  >
-                    {savingCat ? <Loader2 size={11} className="animate-spin" /> : <Plus size={11} />}
-                    Crear
-                  </button>
-                </div>
-              </div>
-            )}
+            <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-1.5">
+              <FolderOpen size={11} className="inline mr-1" />Categoría
+            </label>
 
             {loadingCats ? (
               <div className="flex items-center gap-2 py-2 text-gray-400 text-sm">
                 <Loader2 size={14} className="animate-spin" /> Cargando...
               </div>
             ) : categorias.length === 0 ? (
-              <p className="text-xs text-gray-400 py-1">No hay categorías. Crea una con "Nueva".</p>
+              <p className="text-xs text-gray-400 py-1">
+                No hay categorías disponibles. Créalas desde "Categorías" en el dashboard.
+              </p>
             ) : (
-              /* ✅ 3 columnas para aprovechar el ancho */
               <div className="grid grid-cols-3 gap-2">
                 {categorias.map(c => (
                   <button

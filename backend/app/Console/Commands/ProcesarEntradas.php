@@ -31,18 +31,20 @@ class ProcesarEntradas extends Command
         $controller  = new EntradaController();
         $procesadas  = 0;
 
-        foreach ($entradas as $entrada) {
-            // No procesar el mismo mes que fue creada si inicio_desde = proximo
-            if ($entrada->inicio_desde === 'proximo') {
-                $creadoEsteMes = $entrada->created_at->month === $hoy->month
-                    && $entrada->created_at->year === $hoy->year;
-                if ($creadoEsteMes) continue;
-            }
-
-            $controller->registrarMovimiento($entrada->user, $entrada, $hoy);
-            $procesadas++;
-            $this->info("✓ {$entrada->nombre} — {$entrada->user->name}");
+foreach ($entradas as $entrada) {
+    if ($entrada->inicio_desde === 'proximo') {
+        $creadoEsteMes = $entrada->created_at->month === $hoy->month
+            && $entrada->created_at->year === $hoy->year;
+        if ($creadoEsteMes) {
+            $this->line("⏭ SKIP {$entrada->nombre} — creada este mes");
+            continue;
         }
+    }
+
+    $controller->registrarMovimiento($entrada->user, $entrada, $hoy);
+    $procesadas++;
+    $this->info("✓ {$entrada->nombre} — {$entrada->user->name}");
+}
 
         $this->info("Procesadas: {$procesadas}");
     }

@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import logo from "../assets/logo.png";
+import { authFetch } from "../router/authFetch";
 
 const HamburgerIcon     = () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>;
 const SidebarToggleIcon = ({ collapsed }) => collapsed
@@ -11,6 +12,10 @@ const SettingsIcon = () => <svg className="w-4 h-4" fill="none" stroke="currentC
 const LogoutIcon   = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>;
 const BellIcon     = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>;
 
+function fmt(n, moneda = "PEN") {
+  return new Intl.NumberFormat("es-PE", { style: "currency", currency: moneda }).format(n ?? 0);
+}
+
 export default function Header({
   user,
   onLogout,
@@ -19,12 +24,40 @@ export default function Header({
   onMobileMenuToggle,
   onOpenSettings,
 }) {
-  const [dropOpen, setDropOpen] = useState(false);
-  const [notiOpen, setNotiOpen] = useState(false);
+  const [dropOpen,  setDropOpen]  = useState(false);
+  const [notiOpen,  setNotiOpen]  = useState(false);
+  const [saldo,     setSaldo]     = useState(null);
 
-  // ✅ La foto viene directo del prop `user` (que App.jsx mantiene actualizado)
   const photoUrl = user?.photo ?? null;
   const initials = (user?.name ?? "U").split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
+  const moneda   = user?.currency ?? "PEN";
+
+  // Cargar saldo de billetera para detectar déficit
+  useEffect(() => {
+    if (!user?.token) return;
+    authFetch("/billetera", user.token)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.billetera?.saldo != null) setSaldo(parseFloat(d.billetera.saldo)); })
+      .catch(() => {});
+  }, [user?.token]);
+
+  const enDeficit   = saldo !== null && saldo < 0;
+
+  // Notificaciones base (estáticas) + déficit si aplica
+  const notificaciones = [
+    ...(enDeficit ? [{
+      title: `Déficit en billetera: ${fmt(saldo, moneda)}`,
+      desc:  "Tu saldo está en números rojos",
+      time:  "Ahora",
+      dot:   "bg-red-500",
+      urgente: true,
+    }] : []),
+    { title: "Presupuesto al 71%",    time: "Hace 1 hora",  dot: "bg-yellow-500", urgente: false },
+    { title: "Reporte mensual listo", time: "Hace 3 horas", dot: "bg-purple-500", urgente: false },
+  ];
+
+  const totalNoti  = notificaciones.length;
+  const hayUrgente = notificaciones.some(n => n.urgente);
 
   return (
     <header className="h-20 bg-white border-b border-gray-200 shadow-md flex items-center px-5 gap-4 sticky top-0 z-10 w-full">
@@ -45,59 +78,75 @@ export default function Header({
       {/* Right */}
       <div className="ml-auto flex items-center gap-3">
 
-        {/* Notificaciones */}
+        {/* ── Notificaciones ── */}
         <div className="relative">
-          <button onClick={() => { setNotiOpen(!notiOpen); setDropOpen(false); }}
-            className="relative w-10 h-10 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-500 hover:border-purple-300 hover:text-purple-600 transition">
+          <button
+            onClick={() => { setNotiOpen(!notiOpen); setDropOpen(false); }}
+            className={`relative w-10 h-10 rounded-xl flex items-center justify-center transition border
+              ${hayUrgente
+                ? "bg-red-50 border-red-200 text-red-500 hover:border-red-400"
+                : "bg-gray-50 border-gray-200 text-gray-500 hover:border-purple-300 hover:text-purple-600"}`}
+          >
             <BellIcon />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />
+            {/* Badge con conteo */}
+            {totalNoti > 0 && (
+              <span className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] text-[10px] font-bold text-white rounded-full flex items-center justify-center px-1
+                ${hayUrgente ? "bg-red-500 animate-pulse" : "bg-purple-500"}`}>
+                {totalNoti}
+              </span>
+            )}
           </button>
 
           {notiOpen && (
-            <div className="absolute right-0 top-14 w-72 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden z-50">
+            <div className="absolute right-0 top-14 w-80 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden z-50">
               <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                 <p className="text-sm font-semibold text-gray-700">Notificaciones</p>
-                <span className="text-xs bg-purple-100 text-purple-600 font-semibold px-2 py-0.5 rounded-full">3 nuevas</span>
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full
+                  ${hayUrgente ? "bg-red-100 text-red-600" : "bg-purple-100 text-purple-600"}`}>
+                  {totalNoti} nueva{totalNoti !== 1 ? "s" : ""}
+                </span>
               </div>
-              {[
-                { title: "Nuevo ingreso registrado", time: "Hace 5 min",   dot: "bg-green-500"  },
-                { title: "Presupuesto al 71%",       time: "Hace 1 hora",  dot: "bg-yellow-500" },
-                { title: "Reporte mensual listo",    time: "Hace 3 horas", dot: "bg-purple-500" },
-              ].map((n, i) => (
-                <div key={i} className="px-4 py-3 hover:bg-gray-50 transition cursor-pointer border-b border-gray-50 last:border-0 flex items-start gap-3">
-                  <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${n.dot}`} />
-                  <div>
-                    <p className="text-sm text-gray-700 font-medium">{n.title}</p>
+
+              {notificaciones.map((n, i) => (
+                <div key={i}
+                  className={`px-4 py-3 transition cursor-pointer border-b border-gray-50 last:border-0 flex items-start gap-3
+                    ${n.urgente ? "bg-red-50 hover:bg-red-100" : "hover:bg-gray-50"}`}>
+                  <span className={`w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 ${n.dot}`} />
+                  <div className="min-w-0">
+                    <p className={`text-sm font-semibold leading-tight ${n.urgente ? "text-red-700" : "text-gray-700"}`}>
+                      {n.title}
+                    </p>
+                    {n.desc && <p className="text-xs text-red-400 mt-0.5">{n.desc}</p>}
                     <p className="text-xs text-gray-400 mt-0.5">{n.time}</p>
                   </div>
+                  {n.urgente && (
+                    <span className="shrink-0 text-[10px] font-bold bg-red-500 text-white px-1.5 py-0.5 rounded-full ml-auto">
+                      ⚠
+                    </span>
+                  )}
                 </div>
               ))}
-              <div className="px-4 py-2.5 text-center">
+
+              <div className="px-4 py-2.5 text-center border-t border-gray-50">
                 <button className="text-xs text-purple-600 font-semibold hover:underline">Ver todas</button>
               </div>
             </div>
           )}
         </div>
 
-        {/* Avatar dropdown */}
+        {/* ── Avatar dropdown ── */}
         <div className="relative">
           <button onClick={() => { setDropOpen(!dropOpen); setNotiOpen(false); }}
             className="flex items-center gap-2 hover:opacity-80 transition">
-
-            {/* ✅ Lee foto desde user.photo (URL del servidor) */}
             {photoUrl ? (
-              <img
-                src={photoUrl}
-                alt="Avatar"
+              <img src={photoUrl} alt="Avatar"
                 className="w-10 h-10 rounded-xl object-cover border-2 border-purple-200 shadow-sm"
-                onError={(e) => { e.target.style.display = "none"; }}
-              />
+                onError={(e) => { e.target.style.display = "none"; }} />
             ) : (
               <div className="w-10 h-10 rounded-xl bg-purple-600 flex items-center justify-center text-white font-bold text-base shadow-md shadow-purple-200">
                 {initials}
               </div>
             )}
-
             <div className="hidden md:block text-left">
               <p className="text-sm font-semibold text-gray-700 leading-tight">{user.name}</p>
               <p className="text-xs text-gray-400">{user.email}</p>
@@ -111,7 +160,6 @@ export default function Header({
                 <p className="text-xs font-semibold text-gray-700">{user.role}</p>
                 <p className="text-xs text-gray-400">{user.email}</p>
               </div>
-       
               <button
                 onClick={() => { setDropOpen(false); onOpenSettings?.(); }}
                 className="w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-2 transition">

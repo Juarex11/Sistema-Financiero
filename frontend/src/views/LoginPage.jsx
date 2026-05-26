@@ -24,9 +24,9 @@ async function loginFetch(body) {
 }
 
 const FEATURES = [
-  { Icon: DollarSign,  text: "Sin costo de mantenimiento." },
-  { Icon: Building2,   text: "Depósitos GRATIS e ilimitados en nuestras ventanillas y cajeros a nivel nacional." },
-  { Icon: Zap,         text: "Cobra y Paga de forma inmediata con usuarios PLIN o YAPE." },
+  { Icon: DollarSign,  text: "Registra tus movimientos financieros" },
+  { Icon: Building2,   text: "Organiza tus ingresos, gastos y ahorros" },
+  { Icon: Zap,         text: "Todo lo que necesitas para presupuestar" },
 ];
 
 export default function LoginScotiabank({ onLogin }) {
@@ -212,12 +212,12 @@ export default function LoginScotiabank({ onLogin }) {
         {/* Contenido superior: texto + features */}
         <div className="relative z-10">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-3">
-            Abre ahora tu<br />
-            <span className="text-purple-600">nueva Cuenta</span><br />
-            Digital
+            Toma el control<br />
+            <span className="text-purple-600">de tu dinero</span><br />
+            hoy mismo
           </h2>
           <p className="text-gray-500 text-base sm:text-lg mb-8">
-            Gratis, rápida y sin papeleos.
+            Regístrate gratis, rápido y sin hojas de cálculo complicadas.
           </p>
 
           <ul className="flex flex-col gap-4 lg:gap-5 mb-10">

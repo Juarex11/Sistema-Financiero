@@ -61,6 +61,37 @@ class BilleteraTransaccionController extends Controller
         return response()->json(['message' => 'Categoría eliminada.']);
     }
 
+    public function historial(Request $request)
+{
+    $hoy  = now();
+    $mes  = (int) $request->query('mes',  $hoy->month);
+    $anio = (int) $request->query('anio', $hoy->year);
+ 
+    $transacciones = BilleteraTransaccion::where('user_id', $request->user()->id)
+        ->where('mes',  $mes)
+        ->where('anio', $anio)
+        ->with('categoria')
+        ->orderBy('fecha', 'desc')
+        ->orderBy('created_at', 'desc')
+        ->get()
+        ->map(function ($t) {
+            $t->fotos = collect($t->fotos ?? [])->map(fn($path) =>
+                Storage::disk('public')->url($path)
+            )->values();
+            return $t;
+        });
+ 
+    $totalIngresos = $transacciones->where('tipo', 'ingreso')->sum('monto');
+    $totalEgresos  = $transacciones->where('tipo', 'egreso')->sum('monto');
+ 
+    return response()->json([
+        'transacciones'  => $transacciones,
+        'total_ingresos' => round((float) $totalIngresos, 2),
+        'total_egresos'  => round((float) $totalEgresos,  2),
+        'mes'            => $mes,
+        'anio'           => $anio,
+    ]);
+}
     // ── Transacciones ─────────────────────────────────────────────────────────
 
     public function index(Request $request)
@@ -110,9 +141,6 @@ class BilleteraTransaccionController extends Controller
             return response()->json(['message' => 'Categoría no válida.'], 422);
         }
 
-        if ($data['tipo'] === 'egreso' && $billetera->saldo < $data['monto']) {
-            return response()->json(['message' => 'Saldo insuficiente.'], 422);
-        }
 
         // Subir fotos
         $fotos = [];
