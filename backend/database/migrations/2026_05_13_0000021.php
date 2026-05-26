@@ -1,4 +1,5 @@
-// php artisan make:migration create_billetera_categorias_table
+// Crea una nueva migración para agregar las columnas
+// php artisan make:migration add_fields_to_billetera_transacciones_table
 
 <?php
 
@@ -9,18 +10,18 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('billetera_categorias', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->string('nombre');
-            $table->string('color', 7)->default('#6366f1');
-            $table->enum('tipo', ['ingreso', 'egreso', 'ambos'])->default('ambos');
-            $table->timestamps();
+        Schema::table('billetera_transacciones', function (Blueprint $table) {
+            $table->foreignId('categoria_id')->nullable()->constrained('billetera_categorias')->nullOnDelete()->after('billetera_id');
+            $table->string('etiqueta')->nullable()->after('descripcion');
+            $table->json('fotos')->nullable()->after('etiqueta');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('billetera_categorias');
+        Schema::table('billetera_transacciones', function (Blueprint $table) {
+            $table->dropForeign(['categoria_id']);
+            $table->dropColumn(['categoria_id', 'etiqueta', 'fotos']);
+        });
     }
 };

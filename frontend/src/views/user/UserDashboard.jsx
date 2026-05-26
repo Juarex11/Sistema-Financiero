@@ -60,7 +60,7 @@ function GraficoCircular({ datos, colores, label, total, moneda }) {
   const vacio = !datos || datos.length === 0 || total === 0;
   return (
     <div className="flex flex-col items-center">
-      <div className="relative w-72 h-72">
+      <div className="relative w-64 h-64">
         {vacio ? (
           <div className="w-full h-full rounded-full border-4 border-dashed border-gray-200 flex items-center justify-center">
             <span className="text-sm font-medium text-gray-300 text-center px-8">
@@ -71,7 +71,7 @@ function GraficoCircular({ datos, colores, label, total, moneda }) {
           <>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={datos} cx="50%" cy="50%" innerRadius={90} outerRadius={130} paddingAngle={3} dataKey="value">
+                <Pie data={datos} cx="50%" cy="50%" innerRadius={75} outerRadius={110} paddingAngle={3} dataKey="value">
                   {datos.map((_, i) => <Cell key={i} fill={colores[i % colores.length]} />)}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
@@ -79,7 +79,7 @@ function GraficoCircular({ datos, colores, label, total, moneda }) {
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Total</p>
-              <p className="text-2xl font-bold text-gray-800">{fmt(total, moneda)}</p>
+              <p className="text-xl font-bold text-gray-800">{fmt(total, moneda)}</p>
             </div>
           </>
         )}
@@ -105,7 +105,7 @@ function FiltrosPeriodo({ periodo, setPeriodo, rangoDesde, setRangoDesde, rangoH
         ))}
       </div>
       {periodo === "rango" && (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2">
             <Calendar size={14} className="text-gray-400" />
             <input type="date" value={rangoDesde} onChange={e => setRangoDesde(e.target.value)}
@@ -124,8 +124,8 @@ function FiltrosPeriodo({ periodo, setPeriodo, rangoDesde, setRangoDesde, rangoH
 }
 
 function TarjetaGrafico({ tipo, gastosRaw, ingresosRaw, transaccionesRaw, periodo, rangoDesde, rangoHasta, moneda, token, onTransaccion }) {
-  const esGasto   = tipo === "gastos";
-  const colores   = esGasto ? COLORS_GASTOS : COLORS_INGRESOS;
+  const esGasto = tipo === "gastos";
+  const colores = esGasto ? COLORS_GASTOS : COLORS_INGRESOS;
   const subtitulo = {
     dia:    esGasto ? "Movimientos de hoy"       : "Confirmados hoy",
     semana: esGasto ? "Movimientos de la semana" : "Confirmados esta semana",
@@ -147,16 +147,13 @@ function TarjetaGrafico({ tipo, gastosRaw, ingresosRaw, transaccionesRaw, period
       const nombre = m.gasto?.nombre ?? m.descripcion ?? "Gasto";
       agrupado[nombre] = (agrupado[nombre] ?? 0) + parseFloat(m.monto);
     });
-
     const egresos = transaccionesRaw.filter(t => t.tipo === "egreso" && enRango(t.fecha, desde, hasta));
     egresos.forEach(t => {
       const nombre = t.descripcion?.trim() || "Retiro billetera";
       agrupado[nombre] = (agrupado[nombre] ?? 0) + parseFloat(t.monto);
     });
-
     datos = Object.entries(agrupado).map(([name, value]) => ({ name, value }));
     total = datos.reduce((a, b) => a + b.value, 0);
-
   } else {
     const filtrados = ingresosRaw.filter(i => i.confirmado && enRango(i.fecha ?? i.created_at, desde, hasta));
     const agrupado  = {};
@@ -164,54 +161,50 @@ function TarjetaGrafico({ tipo, gastosRaw, ingresosRaw, transaccionesRaw, period
       const nombre = i.descripcion ?? i.tipo ?? "Ingreso";
       agrupado[nombre] = (agrupado[nombre] ?? 0) + parseFloat(i.monto);
     });
-
     const ingresos = transaccionesRaw.filter(t => t.tipo === "ingreso" && enRango(t.fecha, desde, hasta));
     ingresos.forEach(t => {
       const nombre = t.descripcion?.trim() || "Ingreso billetera";
       agrupado[nombre] = (agrupado[nombre] ?? 0) + parseFloat(t.monto);
     });
-
     datos = Object.entries(agrupado).map(([name, value]) => ({ name, value }));
     total = datos.reduce((a, b) => a + b.value, 0);
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col gap-5 relative">
-      <div className="flex items-center gap-2">
-        <div className={`w-8 h-8 ${esGasto ? "bg-red-100" : "bg-purple-100"} rounded-xl flex items-center justify-center`}>
-          {esGasto
-            ? <TrendingDown size={16} className="text-red-500" />
-            : <TrendingUp   size={16} className="text-purple-600" />}
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col gap-4 relative">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className={`w-8 h-8 ${esGasto ? "bg-red-100" : "bg-purple-100"} rounded-xl flex items-center justify-center`}>
+            {esGasto
+              ? <TrendingDown size={16} className="text-red-500" />
+              : <TrendingUp   size={16} className="text-purple-600" />}
+          </div>
+          <div>
+            <p className="text-sm font-bold text-gray-800">{esGasto ? "Gastos" : "Ingresos"}</p>
+            <p className="text-xs text-gray-400">{subtitulo}</p>
+          </div>
         </div>
-        <div>
-          <p className="text-sm font-bold text-gray-800">{esGasto ? "Gastos" : "Ingresos"}</p>
-          <p className="text-xs text-gray-400">{subtitulo}</p>
-        </div>
-      </div>
-
-      <div className="relative">
-        <GraficoCircular datos={datos} colores={colores} label={esGasto ? "gastos" : "ingresos"} total={total} moneda={moneda} />
-
+        {/* ✅ Botón en el header de la tarjeta, no flotante sobre el gráfico */}
         <button
           onClick={() => onTransaccion(esGasto ? "egreso" : "ingreso")}
-          className={`absolute bottom-0 right-4 w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95
+          className={`w-10 h-10 rounded-full shadow-md flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95
             ${esGasto
-              ? "bg-red-500   hover:bg-red-600   text-white"
+              ? "bg-red-500 hover:bg-red-600 text-white"
               : "bg-green-500 hover:bg-green-600 text-white"}`}
         >
-          {esGasto
-            ? <Minus size={22} strokeWidth={2.5} />
-            : <Plus  size={22} strokeWidth={2.5} />}
+          {esGasto ? <Minus size={18} strokeWidth={2.5} /> : <Plus size={18} strokeWidth={2.5} />}
         </button>
       </div>
 
+      <GraficoCircular datos={datos} colores={colores} label={esGasto ? "gastos" : "ingresos"} total={total} moneda={moneda} />
+
       {datos.length > 0 && (
-        <div className="space-y-2 mt-2">
+        <div className="space-y-2">
           {datos.map((g, i) => (
             <div key={g.name} className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: colores[i % colores.length] }} />
-                <p className="text-xs text-gray-600 truncate max-w-[160px]">{g.name}</p>
+                <p className="text-xs text-gray-600 truncate max-w-[140px]">{g.name}</p>
               </div>
               <p className="text-xs font-bold text-gray-700">{fmt(g.value, moneda)}</p>
             </div>
@@ -222,7 +215,6 @@ function TarjetaGrafico({ tipo, gastosRaw, ingresosRaw, transaccionesRaw, period
   );
 }
 
-// ── Dashboard principal ───────────────────────────────────────────────────────
 export default function UserDashboard({ user }) {
   const hoy  = new Date();
   const mes  = hoy.getMonth() + 1;
@@ -237,7 +229,7 @@ export default function UserDashboard({ user }) {
   const [ingresosRaw,      setIngresosRaw]      = useState([]);
   const [transaccionesRaw, setTransaccionesRaw] = useState([]);
   const [loading,          setLoading]          = useState(true);
-  const [modal,            setModal]            = useState(null); // "ingreso" | "egreso" | null
+  const [modal,            setModal]            = useState(null);
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -248,23 +240,10 @@ export default function UserDashboard({ user }) {
         authFetch(`/ingresos?mes=${mes}&anio=${anio}`, user.token),
         authFetch("/billetera/transacciones",          user.token),
       ]);
-
-      if (rBil.ok) {
-        const d = await rBil.json();
-        setBilletera(d.billetera);
-      }
-      if (rGastos.ok) {
-        const data = await rGastos.json();
-        setGastosRaw(Object.values(data).flat());
-      }
-      if (rIngresos.ok) {
-        const data = await rIngresos.json();
-        setIngresosRaw(data.ingresos ?? []);
-      }
-      if (rTrans.ok) {
-        const data = await rTrans.json();
-        setTransaccionesRaw(data.transacciones ?? []);
-      }
+      if (rBil.ok)     { const d = await rBil.json();     setBilletera(d.billetera); }
+      if (rGastos.ok)  { const d = await rGastos.json();  setGastosRaw(Object.values(d).flat()); }
+      if (rIngresos.ok){ const d = await rIngresos.json(); setIngresosRaw(d.ingresos ?? []); }
+      if (rTrans.ok)   { const d = await rTrans.json();   setTransaccionesRaw(d.transacciones ?? []); }
     } catch {}
     finally { setLoading(false); }
   }, []);
@@ -274,92 +253,16 @@ export default function UserDashboard({ user }) {
   const handleTransaccionExito = async (nuevoSaldo) => {
     setBilletera(prev => ({ ...prev, saldo: nuevoSaldo }));
     setModal(null);
-
     const r = await authFetch("/billetera/transacciones", user.token);
-    if (r.ok) {
-      const d = await r.json();
-      setTransaccionesRaw(d.transacciones ?? []);
-    }
+    if (r.ok) { const d = await r.json(); setTransaccionesRaw(d.transacciones ?? []); }
   };
 
   const filtrosProps = { periodo, setPeriodo, rangoDesde, setRangoDesde, rangoHasta, setRangoHasta };
-  const tarjetaProps = {
-    gastosRaw,
-    ingresosRaw,
-    transaccionesRaw,
-    periodo,
-    rangoDesde,
-    rangoHasta,
-    moneda: user.currency,
-    token: user.token,
-    onTransaccion: setModal,
-  };
+  const tarjetaProps = { gastosRaw, ingresosRaw, transaccionesRaw, periodo, rangoDesde, rangoHasta, moneda: user.currency, token: user.token, onTransaccion: setModal };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
-
-      {/* Saldo billetera */}
-      {billetera && (
-        <div className="bg-gradient-to-r from-purple-600 to-purple-700 rounded-2xl p-6 shadow-sm flex items-center gap-5">
-          <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center shrink-0">
-            <Wallet size={26} className="text-white" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-purple-200 uppercase tracking-widest mb-1">Saldo en billetera</p>
-            <p className="text-4xl font-bold text-white">{fmt(billetera.saldo, user.currency)}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Selector de vista */}
-      <div className="flex items-center gap-2 bg-gray-100 rounded-2xl p-1.5 w-fit">
-        {VISTAS.map(({ key, label, Icon }) => (
-          <button
-            key={key}
-            onClick={() => setVista(key)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
-              ${vista === key ? "bg-white text-purple-700 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
-          >
-            <Icon size={15} strokeWidth={2} />
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {/* Contenido */}
-      {vista === "ambos" && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
-          <FiltrosPeriodo {...filtrosProps} />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-gray-100 pt-5">
-            <TarjetaGrafico tipo="gastos"   {...tarjetaProps} />
-            <TarjetaGrafico tipo="ingresos" {...tarjetaProps} />
-          </div>
-        </div>
-      )}
-
-      {vista === "gastos" && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
-          <FiltrosPeriodo {...filtrosProps} />
-          <div className="border-t border-gray-100 pt-5 flex justify-center">
-            <div className="w-full max-w-md">
-              <TarjetaGrafico tipo="gastos" {...tarjetaProps} />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {vista === "ingresos" && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
-          <FiltrosPeriodo {...filtrosProps} />
-          <div className="border-t border-gray-100 pt-5 flex justify-center">
-            <div className="w-full max-w-md">
-              <TarjetaGrafico tipo="ingresos" {...tarjetaProps} />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal externo */}
+    <>
+      {/* ✅ Modal fuera del contenedor con padding/max-width */}
       {modal && (
         <ModalTransaccion
           tipo={modal}
@@ -370,6 +273,70 @@ export default function UserDashboard({ user }) {
         />
       )}
 
-    </div>
+      <div className="p-6 max-w-5xl mx-auto space-y-6">
+
+        {/* Saldo billetera */}
+        {billetera && (
+          <div className="bg-gradient-to-r from-purple-600 to-purple-700 rounded-2xl p-6 shadow-sm flex items-center gap-5">
+            <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center shrink-0">
+              <Wallet size={26} className="text-white" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-purple-200 uppercase tracking-widest mb-1">Saldo en billetera</p>
+              <p className="text-4xl font-bold text-white">{fmt(billetera.saldo, user.currency)}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Selector de vista */}
+        <div className="flex items-center gap-2 bg-gray-100 rounded-2xl p-1.5 w-fit">
+          {VISTAS.map(({ key, label, Icon }) => (
+            <button
+              key={key}
+              onClick={() => setVista(key)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
+                ${vista === key ? "bg-white text-purple-700 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+            >
+              <Icon size={15} strokeWidth={2} />
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Contenido */}
+        {vista === "ambos" && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+            <FiltrosPeriodo {...filtrosProps} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-gray-100 pt-5">
+              <TarjetaGrafico tipo="gastos"   {...tarjetaProps} />
+              <TarjetaGrafico tipo="ingresos" {...tarjetaProps} />
+            </div>
+          </div>
+        )}
+
+        {vista === "gastos" && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+            <FiltrosPeriodo {...filtrosProps} />
+            <div className="border-t border-gray-100 pt-5 flex justify-center">
+              <div className="w-full max-w-md">
+                <TarjetaGrafico tipo="gastos" {...tarjetaProps} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {vista === "ingresos" && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+            <FiltrosPeriodo {...filtrosProps} />
+            <div className="border-t border-gray-100 pt-5 flex justify-center">
+              <div className="w-full max-w-md">
+                <TarjetaGrafico tipo="ingresos" {...tarjetaProps} />
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
+    </>
   );
 }

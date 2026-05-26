@@ -3,12 +3,16 @@ const API_BASE = import.meta.env.VITE_API_URL;
 export async function authFetch(endpoint, token, options = {}) {
   const controller = new AbortController();
   const tid = setTimeout(() => controller.abort(), 8_000);
+
+  const isFormData = options.body instanceof FormData;
+
   try {
     const res = await fetch(`${API_BASE}${endpoint}`, {
       ...options,
       signal: controller.signal,
       headers: {
-        "Content-Type": "application/json",
+        // ✅ Si es FormData NO ponemos Content-Type, el browser lo genera con el boundary
+        ...(!isFormData && { "Content-Type": "application/json" }),
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
         ...options.headers,
